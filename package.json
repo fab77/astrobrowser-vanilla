@@ -1,7 +1,7 @@
 {
-  "name": "test",
+  "name": "astrobrowser",
   "description": "WebGL 3D astro maps visualizer in HiPS format supporting PNG, JPG and FITS format",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "keyword": [
