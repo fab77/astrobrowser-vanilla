@@ -51,14 +51,14 @@
     "healpixjs": "^1.0.3",
     "helmet": "^6.0.1",
     "jquery": "^3.6.1",
-    "jsfitsio": "^1.1.14",
+    "jsfitsio": "^1.1.12",
     "koa": "^2.13.4",
     "koa-cors": "^0.0.16",
     "koa-proxy": "^1.0.0-alpha.3",
     "morgan": "~1.9.1",
     "node-fetch": "^3.1.0",
     "tabulator-tables": "^5.4.3",
-    "wcslight": "^1.0.11",
+    "wcslight": "^1.0.9",
     "webpack-dev-middleware": "^5.2.2"
   },
   "devDependencies": {
