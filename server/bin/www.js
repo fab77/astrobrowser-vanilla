@@ -16,7 +16,7 @@ import http from 'http';
  * Get port from environment and store in Express.
  */
 
-const DEFAULT_PORT = 3000
+const DEFAULT_PORT = 4000
 var port = normalizePort(process.env.PORT || DEFAULT_PORT);
 app.set('port', port);
 
