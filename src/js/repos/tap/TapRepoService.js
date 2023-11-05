@@ -189,8 +189,12 @@ class TapRepoSingleton {
     parseTable(tablenode, tablesurl) {
 
         let tablename = tablenode.getElementsByTagName("name")[0].innerHTML;
-        let tabledesc = tablenode.getElementsByTagName("description")[0].innerHTML;
+        // console.log(tablename)
+        let tabledesc = (tablenode.getElementsByTagName("description")[0] !== undefined) ? tablenode.getElementsByTagName("description")[0].innerHTML : null;
+        // console.log(tabledesc)
         let metacolumns = tablenode.getElementsByTagName("column");
+
+        
 
         let columns = [];
         let tapMetas = new TapMetadataList();

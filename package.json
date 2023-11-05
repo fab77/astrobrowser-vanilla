@@ -30,7 +30,7 @@
     "server": "nodemon ./server/bin/www",
     "devstart": "nodemon ./server/bin/www.js",
     "serverstart": "DEBUG=test:* npm run devstart",
-    "all": "mkdir public; npm run clean; npm run compile; npm run deploy",
+    "all": "npm i; mkdir public; npm run clean; npm run compile; npm run deploy",
     "clean": "shx rm -rf _bundles/* lib-esm/* public/*",
     "compile": "npm run clean && cp src/html/* _bundles/ && webpack --mode=development ",
     "deploy": "mv _bundles/index.html public/; mkdir public/javascripts; mv _bundles/*.js public/javascripts/; mv _bundles/*.map public/javascripts/; mv -v _bundles/* public/"
@@ -58,7 +58,7 @@
     "morgan": "~1.9.1",
     "node-fetch": "^3.1.0",
     "tabulator-tables": "^5.4.3",
-    "wcslight": "^1.0.13",
+    "wcslight": "^1.0.15",
     "webpack-dev-middleware": "^5.2.2"
   },
   "devDependencies": {

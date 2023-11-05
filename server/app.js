@@ -44,10 +44,13 @@ app.use('/users', usersRouter);
 app.use('/api', apiRouter);
 // app.use('/backend', backendRouter);
 
-app.get('/:exturl', async (req, res) => {
+app.get('//:exturl', async (req, res) => {
   
-    let endpoint = req.params.exturl.replaceAll("@@", "/");
+    console.log("proxy entry");
+    let endpoint = req.params.exturl.replaceAll("/", "");
+    endpoint = endpoint.replaceAll("@@", "/");
     endpoint = endpoint.replaceAll("**", ":");
+    
     let params = {}
   
     await axios.get(endpoint, {

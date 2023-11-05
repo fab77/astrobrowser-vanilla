@@ -154,7 +154,6 @@ class VisibleTilesManager {
 
 					if (intersectionPoint.length > 0) {
 
-						// TODO compute galactic pixno as well
 
 						galVec = vec4.create();
 						vec4.transformMat4(galVec, [intersectionPoint[0], intersectionPoint[1], intersectionPoint[2], 1], this._galacticMatrix)

@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 import { WCSLight, HiPSProjection, MercatorProjection, Point, CoordsType, NumberType } from 'wcslight';
 import { FITSWriter } from 'jsfitsio';
 
-var router = express.Router();
+let router = express.Router();
 
 
 /* GET API. */
