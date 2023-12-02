@@ -1,7 +1,7 @@
 {
   "name": "astrobrowser",
   "description": "WebGL 3D astro maps visualizer in HiPS format supporting PNG, JPG and FITS format",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "keyword": [
@@ -58,7 +58,7 @@
     "morgan": "~1.9.1",
     "node-fetch": "^3.1.0",
     "tabulator-tables": "^5.4.3",
-    "wcslight": "^1.0.15",
+    "wcslight": "^1.0.17",
     "webpack-dev-middleware": "^5.2.2"
   },
   "devDependencies": {

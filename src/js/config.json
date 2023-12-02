@@ -10,7 +10,7 @@
     "useCORSProxy": true,
     "maxDecimals": 15,
     "defaultHipsUrl": "//skies.esac.esa.int/DSSColor/",
-    "version": "fabviewer 1.0.6_alpha",
+    "version": "fabviewer 1.0.0_beta",
     "debug": false,
     "insideView": false,
     "camera": {
