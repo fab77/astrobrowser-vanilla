@@ -20,27 +20,32 @@ router.get('/cutout', function(req, res, next) {
   // res.sendFile(path.join(__dirname, '../../public','/api.html'));
   runWCS(req).then( resultdata => {
     
-    console.log("resultdata")
-    console.log(resultdata)
     
+    if (resultdata == undefined) {
+      console.log("Response from WCSLight was undefined")
+      res.end();
+      return
+    }
+
+    console.log("Processing response from WCSLight")
     let fw = new FITSWriter();
     fw.run(resultdata.fitsheader[0], resultdata.fitsdata.get(0));
 
-    console.log("fw._fitsData")
-    console.log(fw._fitsData)
+    // console.log("fw._fitsData")
+    // console.log(fw._fitsData)
+    
     const blob = new Blob([fw._fitsData], { type: "application/fits" });
     
-    
-
     blob.lastModifiedDate = new Date();
     blob.name = "test.fits";
     
-    console.log("blob")
-    console.log(blob)
-    console.log("result size %", blob.size)
+    // console.log(blob)
+    // console.log("result size %", blob.size)
   
+    console.log("Preparing response")
     res.setHeader('Content-Length', blob.size);
     res.write(blob._buffer, 'binary');
+    console.log("Response from API sent")
     res.end();
   });
   
