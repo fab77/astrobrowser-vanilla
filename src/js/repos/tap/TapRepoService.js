@@ -383,12 +383,13 @@ class TapRepoSingleton {
         fovPolyAstro = FoVUtils.getAstroFoVPolygon(fovPolyCartesian);
         let adqlQuery = undefined;
 
-        if (tapPgSphere !== undefined && tapPgSphere !== null) {
-            adqlQuery = "select * " +
-                "from " + tapTable + " where " +
-                "1=INTERSECTS(" + tapPgSphere + ", " +
-                "POLYGON('ICRS', " + fovPolyAstro + "))";
-        } else {
+        // not working anymore in esasky
+        // if (tapPgSphere !== undefined && tapPgSphere !== null) {
+        //     adqlQuery = "select * " +
+        //         "from " + tapTable + " where " +
+        //         "1=INTERSECTS(" + tapPgSphere + ", " +
+        //         "POLYGON('ICRS', " + fovPolyAstro + "))";
+        // } else {
 
             if (tapRepo.adqlFunctionList.includes("POLYGON")) {
                 adqlQuery = "select * " +
@@ -413,7 +414,7 @@ class TapRepoSingleton {
                     "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
                     "CIRCLE('ICRS', " + center._raDeg + ", " + center._decDeg + ", " + radius + "))";
             }
-        }
+        // }
 
 
 
