@@ -8,6 +8,8 @@ class HiPSDescriptor {
 	_maxOrder;
 	_imgFormat;
 	_hipsFrame;
+	_emMin;
+	_emMax;
 	
 	constructor(hipsproperties, hipsurl){
 		
@@ -22,7 +24,8 @@ class HiPSDescriptor {
 		this._hipsFrame = undefined;
 		this._hipsName = undefined;
 		this._hipsurl = hipsurl;
-			
+		this._emMin = undefined;
+		this._emMax = undefined;
 
 		const allLines = hipsproperties.split(/\r\n|\n/);
 		allLines.forEach((line) => {
@@ -43,6 +46,10 @@ class HiPSDescriptor {
 				this._hipsFrame = this.getValue(line);
 			} else if (line.startsWith("obs_collection") || line.startsWith("label")) {
 				this._hipsName = this.getValue(line);
+			} else if (line.startsWith("em_min")) {
+				this._emMin = this.getValue(line);
+			} else if (line.startsWith("em_max")) {
+				this._emMax = this.getValue(line);
 			} 
 
 			
@@ -113,6 +120,13 @@ class HiPSDescriptor {
 		return this._isGalctic;
 	}
 	
+	get emMin() {
+		return this._emMin
+	}
+
+	get emMax() {
+		return this._emMax
+	}
 }
 
 export default HiPSDescriptor;

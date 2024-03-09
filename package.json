@@ -57,7 +57,7 @@
     "koa-proxy": "^1.0.0-alpha.3",
     "morgan": "~1.9.1",
     "node-fetch": "^3.1.0",
-    "tabulator-tables": "^5.4.3",
+    "tabulator-tables": "^5.6.1",
     "wcslight": "^1.0.17",
     "webpack-dev-middleware": "^5.2.2"
   },

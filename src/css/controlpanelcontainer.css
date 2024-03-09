@@ -14,7 +14,7 @@
 
 .controlPanel{
     position: absolute;
-    max-height: 500px;
+    max-height: 600px;
     background-color: var(--commonBg);
     left: 45px;
     top: 15px;
@@ -306,4 +306,23 @@
     width: 200px;
     border: 1px solid;
     padding: 3px;
+}
+
+#gotoButtonText, #catalogueButtonText, #footprintButtonText,
+#mapsButtonText, #settingsButtonText, #cutoutButtonText {
+    display: none;
+    border: 1px solid #000;
+    height: 30px;
+    width: 280px;
+    margin-left: 53px;
+    position: absolute;
+}
+
+#gotoButton:hover + #gotoButtonText, 
+#cataloguesButton:hover + #catalogueButtonText,
+#footprintsButton:hover + #footprintButtonText,
+#mapsButton:hover + #mapsButtonText,
+#settingsButton:hover + #settingsButtonText,
+#cutoutButton:hover + #cutoutButtonText {
+    display: block;
 }

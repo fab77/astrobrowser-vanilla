@@ -22,16 +22,17 @@ import CloseFootprintSettingsEvent from "./footprintpanel/events/CloseFootprintS
 
 import HiPSPanelView from './hipspanel/HiPSPanelView.js';
 import HiPSListPresenter from './hipspanel/HiPSListPresenter.js';
-import HiPSSettingsView from './hipspanel/HiPSSettingsView.js';
-import HiPSSettingsPresenter from './hipspanel/HiPSSettingsPresenter.js';
-import HiPSSettingsEvent from "./hipspanel/events/HiPSSettingsEvent.js";
-import CloseHiPSSettingsEvent from "./hipspanel/events/CloseHiPSSettingsEvent.js";
+// import HiPSSettingsView from './hipspanel/HiPSSettingsView.js';
+// import HiPSSettingsPresenter from './hipspanel/HiPSSettingsPresenter.js';
+// import HiPSSettingsEvent from "./hipspanel/events/HiPSSettingsEvent.js";
+// import CloseHiPSSettingsEvent from "./hipspanel/events/CloseHiPSSettingsEvent.js";
 
 import SettingsPanelView from '../../view/SettingsPanelView.js';
 import SettingsPresenter from '../../presenter/SettingsPresenter.js';
 
-// import CutoutPanelView from "./cutoutpanel/CutoutPanelView.js";
-// import CutoutPanelPresenter from './cutoutpanel/CutoutPanelPresenter.js';
+import CutoutPanelView from "./cutoutpanel/CutoutPanelView.js";
+import CutoutPanelPresenter from './cutoutpanel/CutoutPanelPresenter.js';
+import CloseCutoutCloseEvent from "./cutoutpanel/events/CloseCutoutCloseEvent.js";
 
 import CataloguePanelView from './cataloguepanel/CataloguePanelView.js';
 import CatalogueListPresenter from './cataloguepanel/CatalogueListPresenter.js';
@@ -44,6 +45,10 @@ import { session } from "../../utils/Session.js";
 import GoToView from "./gotopanel/GoToView.js";
 import GoToPresenter from "./gotopanel/GoToPresenter.js";
 import HiPSSelectedEvent from "../../events/HiPSSelectedEvent.js";
+
+import DEView from "../dataexplorer/DEView.js";
+import DEPresenter from "../dataexplorer/DEPresenter.js";
+import OpenDataExplorerPanelEvent from '../../events/OpenDataExplorerPanelEvent.js';
 
 class ControlPanelPresenter{
 	
@@ -123,9 +128,9 @@ class ControlPanelPresenter{
 		this._settingsPresenter = new SettingsPresenter(settingsPanelView);
 		this.view.appendChild(settingsPanelView.getHtml());
 
-		// let cutoutPanelView = new CutoutPanelView();
-		// this._cutoutPresenter = new CutoutPanelPresenter(cutoutPanelView);
-		// this.view.appendChild(cutoutPanelView.getHtml());
+		let cutoutPanelView = new CutoutPanelView();
+		this._cutoutPresenter = new CutoutPanelPresenter(cutoutPanelView);
+		this.view.appendChild(cutoutPanelView.getHtml());
 		
 	}
 
@@ -171,7 +176,7 @@ class ControlPanelPresenter{
 				this._footprintsListPresenter.view.close()
 				this._hipsListPresenter.view.close()
 				this._settingsPresenter.close()
-				// this._cutoutPresenter.close()
+				this._cutoutPresenter.close()
 			}
 		} );
 		$("#gotoButton").on("click", function(){eventBus.fireEvent(new OpenPanelEvent("GoTo")) } );
@@ -180,7 +185,7 @@ class ControlPanelPresenter{
 		$("#mapsButton").on("click", function(){eventBus.fireEvent(new OpenPanelEvent("Maps")) } );
 		$("#settingsButton").on("click", function(){eventBus.fireEvent(new OpenPanelEvent("Settings")) } );
 		// $("#cutoutButton").on("click", function(){eventBus.fireEvent(new OpenPanelEvent("Cutout")) } );
-		// $("#dataExplorerButton").on("click", function(){eventBus.fireEvent(new OpenPanelEvent("DataExplorer")) } );
+		$("#dataExplorerButton").on("click", function(){eventBus.fireEvent(new OpenPanelEvent("DataExplorer")) } );
 		
 
 	}
@@ -194,13 +199,14 @@ class ControlPanelPresenter{
 		eventBus.registerForEvent(this, FootprintSettingsEvent.name);
 		eventBus.registerForEvent(this, CloseFootprintSettingsEvent.name);
 		
-		eventBus.registerForEvent(this, HiPSSettingsEvent.name);
-		eventBus.registerForEvent(this, CloseHiPSSettingsEvent.name);
+		// eventBus.registerForEvent(this, HiPSSettingsEvent.name);
+		// eventBus.registerForEvent(this, CloseHiPSSettingsEvent.name);
 
 		eventBus.registerForEvent(this, HiPSSelectedEvent.name);
-		// eventBus.registerForEvent(this, CloseDataExplorerEvent.name);
+		eventBus.registerForEvent(this, CloseCutoutCloseEvent.name);
 
-		
+		eventBus.registerForEvent(this, OpenDataExplorerPanelEvent.name);
+		eventBus.registerForEvent(this, OpenPanelEvent.name);
 	}
 	
 	notify(in_event){
@@ -231,8 +237,10 @@ class ControlPanelPresenter{
 
 			} else if (in_event.panelName == "Cutout"){
 
-				// this._cutoutPresenter.toggle()
+				this._cutoutPresenter.toggle()
 			
+			}  else if (in_event.panelName == "DataExplorer"){
+				this._dataExplorerPresenter.toggle();
 			}
 
 			if (in_event.panelName !== "GoTo"){
@@ -251,9 +259,11 @@ class ControlPanelPresenter{
 				this._settingsPresenter.close()
 			}
 			if (in_event.panelName !== "Cutout"){
-				// this._cutoutPresenter.close()
-			
+				this._cutoutPresenter.close()
 			}
+			// if (in_event.panelName !== "DataExplorer"){
+			// 	this._dataExplorerPresenter.close()
+			// }
 			
 
 		} else if (in_event instanceof CatalogueSettingsEvent) {
@@ -278,40 +288,50 @@ class ControlPanelPresenter{
 
 			this._view.hidePopup();
 
-		} else if (in_event instanceof HiPSSettingsEvent) {
+		// } else if (in_event instanceof HiPSSettingsEvent) {
 			
-			// ???
-			let hipsSettingsView = new HiPSSettingsView(in_event.descriptor);
-			this._view.showPopup(hipsSettingsView.getHtml());
-			let hipsSettingsPresenter = new HiPSSettingsPresenter(hipsSettingsView, in_event.descriptor);
+		// 	// ???
+		// 	let hipsSettingsView = new HiPSSettingsView(in_event.descriptor);
+		// 	this._view.showPopup(hipsSettingsView.getHtml());
+		// 	let hipsSettingsPresenter = new HiPSSettingsPresenter(hipsSettingsView, in_event.descriptor);
 			
 
-		}else if (in_event instanceof CloseHiPSSettingsEvent) {
+		// }else if (in_event instanceof CloseHiPSSettingsEvent) {
+		// 	this._view.hidePopup();
 
-			this._view.hidePopup();
+		} else if (in_event instanceof HiPSSelectedEvent){
+			this.toggleFunctionalities();
+		} else if (in_event instanceof OpenDataExplorerPanelEvent){
+			console.log("OpenDataExplorerPanelEvent")
+			console.log(OpenDataExplorerPanelEvent)
+			if (!this._dataExplorerPresenter) {
+				this._dataExplorerView = new DEView();
+				this._dataExplorerPresenter = new DEPresenter(this._dataExplorerView);
+				this.view.openDataExplorer(this._dataExplorerView.getHtml());
+			}
+			this._dataExplorerPresenter.toggle();
+			this._dataExplorerPresenter.refreshModel(in_event.pxSize, in_event.craDeg, in_event.cdecDeg, in_event.radiusDeg, in_event.projectionName, in_event._hipsURL);
+		}
 
-		} 
-		// else if (in_event instanceof HiPSSelectedEvent){
-		// 	this.toggleFunctionalities();
-		// }
+
 
 	}
 	
-	// toggleFunctionalities() {
-	// 	if (session.activeHiPS.length >= 1) {
-	// 		let hips = session.activeHiPS[0];
-	// 		if (hips._descriptor._imgformats.includes("fits") || 
-	// 			hips._descriptor._imgformats.includes("FITS") ){
+	toggleFunctionalities() {
+		if (session.activeHiPS.length >= 1) {
+			let hips = session.activeHiPS[0];
+			if (hips._descriptor._imgformats.includes("fits") || 
+				hips._descriptor._imgformats.includes("FITS") ){
 					
-	// 				this._view.enableCutOutButton();
-	// 				$("#cutoutButton").on("click", function(){eventBus.fireEvent(new OpenPanelEvent("Cutout")) } );
-	// 		} else {
-	// 			// disable cutout panel
-	// 			this._view.disableCutOutButton();
-	// 			$("#cutoutButton").off("click", "**" );
-	// 		}
-	// 	}
-	// }
+					this._view.enableCutOutButton();
+					$("#cutoutButton").on("click", function(){eventBus.fireEvent(new OpenPanelEvent("Cutout")) } );
+			} else {
+				// disable cutout panel
+				this._view.disableCutOutButton();
+				$("#cutoutButton").off("click", "**" );
+			}
+		}
+	}
 
 
 	get hipsListPresenter(){

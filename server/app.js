@@ -5,6 +5,7 @@ import logger from 'morgan';
 import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
 import apiRouter from './routes/api.js';
+import extUrlRouter from './routes/exturl.js';
 // import backendRouter from './routes/backend.js';
 import cors from 'cors';
 import axios from 'axios';
@@ -42,7 +43,21 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/api', apiRouter);
+app.use('/exturl', extUrlRouter);
 // app.use('/backend', backendRouter);
+
+// app.get('exturl', async (req, res) => {
+//   let url = req.query.url
+//   await axios.get(url, {
+//     params: params
+//   }).then(response => {
+//     res.header("Access-Control-Allow-Origin", "*");
+//     res.send(response.data)
+    
+//   }).catch(error => {
+//     res.json(error)
+//   })
+// });
 
 app.get('//:exturl', async (req, res) => {
   

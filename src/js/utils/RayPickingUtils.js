@@ -16,7 +16,7 @@ class RayPickingUtils{
 	
 	static getRayFromMouse (in_mouseX, in_mouseY, pMatrix) {
 		
-		var vMatrix = global.camera.getCameraMatrix();
+		let vMatrix = global.camera.getCameraMatrix();
 		var gl = global.gl;
 		var pMatrix = global.pMatrix; // TODO try to remove global.pMatrix
 		

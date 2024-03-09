@@ -14,7 +14,7 @@ class CoordinatesPanelPresenter {
 	constructor(in_parentView){
 		
 		this._view = new CoordinatesPanelView();
-		this._showSphericalCoords = false;
+		this._showSphericalCoords = true;
 		this._view.showSphericalCoords(this._showSphericalCoords); 
 
 		// this._parentView = in_parentView;

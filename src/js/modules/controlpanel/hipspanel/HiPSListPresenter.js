@@ -6,17 +6,15 @@ import CutoutPanelView from "../cutoutpanel/CutoutPanelView.js";
 import CutoutPanelPresenter from '../cutoutpanel/CutoutPanelPresenter.js';
 
 import InsideSphereSelectionChangedEvent from '../../../events/InsideSphereSelectionChangedEvent.js';
-import OpenDataExplorerPanelEvent from '../../../events/OpenDataExplorerPanelEvent.js';
-import OpenPanelEvent from '../../../events/OpenPanelEvent.js';
 import eventBus from '../../../events/EventBus.js';
 import HiPS from '../../../model/hipsnew/HiPS.js';
 
 import { addHiPSNode, addHiPS } from '../../../repos/HiPSNodeRepo.js';
 import global from '../../../Global.js';
+import config from '../../../config.json';
+
 import { session } from '../../../utils/Session.js';
 import ColorMaps from "../../dataexplorer/model/ColorMaps.js";
-import DEView from "../../dataexplorer/DEView.js";
-import DEPresenter from "../../dataexplorer/DEPresenter.js";
 
 class HiPSListPresenter {
 
@@ -48,12 +46,19 @@ class HiPSListPresenter {
 
 						promises.push(addHiPS(hipsurl).then((descriptor) => {
 
-							let dtIcon = undefined;
-							const dtEnabled = descriptor.imgFormats.includes("fits") ? true : false;
-							if (dtEnabled) {
-								dtIcon = "scissor.svg";
-							}
-							let selected = (global.defaultHips.name === descriptor.surveyName) ? true : false;
+							// let dtIcon = undefined;
+							// const dtEnabled = descriptor.imgFormats.includes("fits") ? true : false;
+							// if (dtEnabled) {
+							// 	dtIcon = "scissor.svg";
+							// }
+
+							console.log(config.defaultHipsUrl)
+							console.log(hipsurl.replace('http:','').replace('https:',''))
+							console.log(hipsurl.replace('http:','').replace('https:','') == config)
+
+							// DEFAULT HIPS SELECTION!!!
+							// let selected = global.defaultHips.name === descriptor.surveyName && config.defaultHipsUrl == hipsurl.replace('/http:','').replace('/https:','') ? true : false;
+							let selected = config.defaultHipsUrl == hipsurl.replace('http:','').replace('https:','') ? true : false;
 							if (selected) {
 								session.activateHiPS(global.defaultHips);
 							}
@@ -65,7 +70,9 @@ class HiPSListPresenter {
 								name: descriptor.surveyName,
 								image_format: descriptor.imgFormats,
 								coord_sys: coordSystem,
-								data_explorer: dtIcon,
+								// data_explorer: dtIcon,
+								em_min: descriptor.emMin,
+								em_max: descriptor.emMax,
 								descriptor: descriptor,
 								hips: hips
 							})
@@ -121,33 +128,35 @@ class HiPSListPresenter {
 
 		this.addButtonsClickHandlers();
 		this.registerForEvents();
-		this.initCutoutForm();
+		// this.initCutoutForm();
 	}
 
 	registerForEvents() {
-		eventBus.registerForEvent(this, OpenDataExplorerPanelEvent.name);
-		eventBus.registerForEvent(this, OpenPanelEvent.name);
+		// eventBus.registerForEvent(this, OpenDataExplorerPanelEvent.name);
+		// eventBus.registerForEvent(this, OpenPanelEvent.name);
 	}
 
 	notify(event) {
 
-		switch (event.constructor) {
-			case OpenDataExplorerPanelEvent:
-				if (!this._dataExplorerPresenter) {
-					this._dataExplorerView = new DEView();
-					this._dataExplorerPresenter = new DEPresenter(this._dataExplorerView);
-					this.view.openDataExplorer(this._dataExplorerView.getHtml());
-				}
-				this._dataExplorerPresenter.toggle();
-				this._dataExplorerPresenter.refreshModel(event.pxSize, event.craDeg, event.cdecDeg, event.radiusDeg, event.projectionName, event._hipsURL);
-				break;
+		// switch (event.constructor) {
+		// 	case OpenDataExplorerPanelEvent:
+		// 		console.log("OpenDataExplorerPanelEvent")
+		// 		if (!this._dataExplorerPresenter) {
+		// 			this._dataExplorerView = new DEView();
+		// 			this._dataExplorerPresenter = new DEPresenter(this._dataExplorerView);
+		// 			this.view.openDataExplorer(this._dataExplorerView.getHtml());
+		// 		}
+		// 		this._dataExplorerPresenter.toggle();
+		// 		this._dataExplorerPresenter.refreshModel(event.pxSize, event.craDeg, event.cdecDeg, event.radiusDeg, event.projectionName, event._hipsURL);
+		// 		break;
 
-			case OpenPanelEvent:
-				if (event.panelName == "DataExplorer") {
-					this._dataExplorerPresenter.toggle();
-				}
-				break;
-		}
+		// 	case OpenPanelEvent:
+		// 		console.log("OpenPanelEvent")
+		// 		if (event.panelName == "DataExplorer") {
+		// 			this._dataExplorerPresenter.toggle();
+		// 		}
+		// 		break;
+		// }
 	}
 
 	initCutoutForm() {
@@ -192,8 +201,36 @@ class HiPSListPresenter {
 		this.view.colorMapDropDown().on("change", { caller: this }, this.colorMapChanged);
 		this.view.invertColorMap().on("change", { caller: this }, this.invertColorChanged);
 
+		this.view.filterField().on("change", { caller: this }, this.updateFilter)
+        this.view.filterType().on("change", { caller: this }, this.updateFilter)
+        this.view.filterValue().on("keyup", { caller: this }, this.updateFilter)
+        this.view.clearFilter().on("click", { caller: this  }, this.clearFilterClicked)
+        
+
 	}
 
+	clearFilterClicked(event) {
+        console.log("clearFilter")
+		let view = event.data.caller.view
+        view.clearFilterClicked();
+    }
+
+    updateFilter(event) {
+        console.log("updateFilter")
+		let view = event.data.caller.view
+        let filterVal = view.filterField().val();
+        let typeVal = view.filterType().val();
+		let value = view.filterValue().val()
+
+        let filter = filterVal;
+        view.filterType().disabled = false;
+        view.filterValue().disabled = false;
+
+
+        if (filterVal) {
+            view.filterTable(filter, typeVal, value);
+        }
+    }
 	colorMapChanged(event) {
 		let valueSelected = this.value;
 		console.log(valueSelected)

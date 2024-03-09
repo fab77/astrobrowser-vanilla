@@ -1,4 +1,3 @@
-
 import $ from "jquery";
 class CutoutPanelView{
 
@@ -42,14 +41,15 @@ class CutoutPanelView{
     }		
 
     updateHiPSName(hipsName){
-        $("#"+this._dom_hipsname_id).text(hipsName);
+        // $("#hipsname").html=hipsName
+        document.getElementById("hipsname").innerHTML = hipsName
+        // $("#"+this._dom_hipsname_id).text(hipsName);
     }
 
     init(){
-        this._dom_hipsname_id = "hipsname";
         this._visible = false;
         this._html = $("<div id='ctoPanel' class='controlPanel'>"
-        + "<span id='"+this._dom_hipsname_id+"'></span>"
+        + "<span id='hipsname'></span>"
         + "<div>"
         + " <label for='cto_pxsize'>pixel size:</label>" 
         + " <input name='cto_pxsize' id='cto_pxsize' type='text' value='0.0005'/>(deg)" 

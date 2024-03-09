@@ -90,7 +90,7 @@ class CataloguePanelView {
                     if (e.target.type == 'checkbox') {
                         catalogueSelectionHandler(tapRepo, cell._cell.row.data.model, e.target.checked)
                     } else if (e.target.nodeName == 'IMG') {
-                        console.log("IMAGE");
+                        // console.log("IMAGE");
                         catalogueSettingsHandler(cell._cell.row.data.model, tapRepo)
                     }
                 });

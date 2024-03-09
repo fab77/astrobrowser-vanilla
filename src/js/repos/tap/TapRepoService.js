@@ -34,9 +34,11 @@ class TapRepoSingleton {
         let tablesurl = tapurl + "/tables";
         let u;
         if (global.useCORSProxy) {
-            tablesurl = tablesurl.replaceAll(":", "**");
-            tablesurl = tablesurl.replaceAll("/", "@@");
-            u = global.corsProxyUrl + "/" + tablesurl
+            // tablesurl = tablesurl.replaceAll(":", "**");
+            // tablesurl = tablesurl.replaceAll("/", "@@");
+            // u = global.corsProxyUrl + "/" + tablesurl
+            
+            u = global.corsProxyUrl + "exturl?url=" + tablesurl
         } else {
             u = tapurl + "/tables";
         }
@@ -118,10 +120,11 @@ class TapRepoSingleton {
         let capabilitiesURL = tapRepo.tapBaseUrl + "/capabilities";
         let u;
         if (global.useCORSProxy) {
-            capabilitiesURL = capabilitiesURL.replaceAll(":", "**");
-            capabilitiesURL = capabilitiesURL.replaceAll("/", "@@");
-            // return fetch(capabilitiesURL, {
-            u = global.corsProxyUrl + "/" + capabilitiesURL
+            // capabilitiesURL = capabilitiesURL.replaceAll(":", "**");
+            // capabilitiesURL = capabilitiesURL.replaceAll("/", "@@");
+            // u = global.corsProxyUrl + "/" + capabilitiesURL
+
+            u = global.corsProxyUrl + "exturl?url=" + capabilitiesURL
         } else {
             u = tapRepo.tapBaseUrl + "/capabilities";
         }

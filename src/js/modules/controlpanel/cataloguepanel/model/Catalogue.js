@@ -535,8 +535,8 @@ class Catalogue {
 					// let mouseCoords = in_mouseHelper.xyz;
 
 					if (source === undefined){
-						console.log(`Source undefined ${i} ${this.sources}`)
-						console.log(this.sources)
+						// console.log(`Source undefined ${i} ${this.sources}`)
+						// console.log(this.sources)
 						continue;
 					}
 					let dist = Math.sqrt((source.point.x - in_mouseHelper.x) * (source.point.x - in_mouseHelper.x) + (source.point.y - in_mouseHelper.y) * (source.point.y - in_mouseHelper.y) + (source.point.z - in_mouseHelper.z) * (source.point.z - in_mouseHelper.z));
