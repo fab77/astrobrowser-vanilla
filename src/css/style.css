@@ -66,6 +66,16 @@ body {
 }
 
 #metadata_button {
+	bottom: 2px;
+	position: absolute;
+	right: 10px;
+	padding: 1px;
+}
+
+#metadata_button>img{
+	height: 40px;
+}
+/* #metadata_button {
 	bottom: 0px;
 	width: 73px;
 	height: 16px;
@@ -73,7 +83,7 @@ body {
 	right: 10px;
 	padding: 1px;
 	font-size: 12px;
-}
+} */
 
 #datapanel {
 	min-height: 150px;
