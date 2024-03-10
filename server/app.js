@@ -6,6 +6,7 @@ import indexRouter from './routes/index.js';
 import usersRouter from './routes/users.js';
 import apiRouter from './routes/api.js';
 import extUrlRouter from './routes/exturl.js';
+import adqlUrlRouter from './routes/adql.js';
 // import backendRouter from './routes/backend.js';
 import cors from 'cors';
 import axios from 'axios';
@@ -44,6 +45,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/api', apiRouter);
 app.use('/exturl', extUrlRouter);
+app.use('/adql', adqlUrlRouter);
 // app.use('/backend', backendRouter);
 
 // app.get('exturl', async (req, res) => {

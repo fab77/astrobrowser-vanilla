@@ -37,7 +37,7 @@ class TapRepoSingleton {
             // tablesurl = tablesurl.replaceAll(":", "**");
             // tablesurl = tablesurl.replaceAll("/", "@@");
             // u = global.corsProxyUrl + "/" + tablesurl
-            
+
             u = global.corsProxyUrl + "exturl?url=" + tablesurl
         } else {
             u = tapurl + "/tables";
@@ -197,7 +197,7 @@ class TapRepoSingleton {
         // console.log(tabledesc)
         let metacolumns = tablenode.getElementsByTagName("column");
 
-        
+
 
         let columns = [];
         let tapMetas = new TapMetadataList();
@@ -243,17 +243,14 @@ class TapRepoSingleton {
     }
 
 
-
-
-
     /**
-     * 
-     * @param {TapRepo} tapRepo 
-     * @param {Catalogue} model 
-     */
+         * 
+         * @param {TapRepo} tapRepo 
+         * @param {Catalogue} model 
+         */
     queryCatalogueByFoV(tapRepo, model) {
 
-        let tablesurl = tapRepo.tapBaseUrl + "/sync?request=doQuery&lang=ADQL&format=json&query=";
+        // let tablesurl = tapRepo.tapBaseUrl + "/sync?request=doQuery&lang=ADQL&format=json&query=";
 
 
         let tapTable, tapRa, tapDec, tapGeom, tapName, fovPolyCartesian, fovPolyAstro, queryencoded;
@@ -287,81 +284,59 @@ class TapRepoSingleton {
                 "POLYGON('ICRS', " + fovPolyAstro + "))";
         }
 
-
-
-        // let adqlQuery = "select ";
-        // adqlQuery += " * " +
-        //     "from "+tapTable+" where " +
-        //     "1=CONTAINS(POINT('ICRS',"+tapRaDeg+", "+tapDecDeg+"), " +
-        //     "POLYGON('ICRS', "+fovPolyAstro+"))";
-
         queryencoded = encodeURI(adqlQuery);
 
-        let xhr = new XMLHttpRequest();
+        let tapUrl = tapRepo.tapBaseUrl
+        let adql = queryencoded
+        let u = global.corsProxyUrl + "adql?tapurl=" + tapUrl + "&query=" + adql
 
-        console.log(queryencoded);
+        const msgId = model._name + "_" + (new Date().getTime())
+        eventBus.fireEvent(new AddMessageToMsgBoxEvent(msgId, "Loading data for " + model._name));
 
-        var _self = this;
-        // TODO CONVERT TO PROMISE!
-        xhr.open('GET', tablesurl + queryencoded, true);
-        xhr.responseType = 'json';
-        xhr.onload = () => {
-            var status = xhr.status;
-            if (status === 200) {
-                if (xhr.response == null) {
-                    console.log("No data received:");
-                    console.log(xhr.response);
-                    return;
-                }
-                var metadata = xhr.response.metadata;
-                var data = xhr.response.data;
+        return fetch(u, {
+            method: 'GET',
+            mode: 'cors',
+            // headers: {
+            //       'Access-Control-Allow-Origin':'*'
+            //     }
+        }).then(res => res.json()
+        ).then(json => {
 
-                // console.log(metadata);
-                console.log(data.length);
+            let metadata = json.metadata;
+            let data = json.data;
 
-                // let columnsmeta = [];
-                let tapMetadataList = new TapMetadataList();
-                for (let i = 0; i < metadata.length; i++) {
+            console.log(data.length);
 
-                    let name = metadata[i].name;
-                    let description = (metadata[i].description !== undefined) ? metadata[i].description : undefined;
-                    let unit = (metadata[i].unit !== undefined) ? metadata[i].unit : undefined;
-                    let datatype = (metadata[i].datatype !== undefined) ? metadata[i].datatype : undefined;
-                    let ucd = (metadata[i].ucd !== undefined) ? metadata[i].ucd : undefined;
-                    let utype = (metadata[i].utype !== undefined) ? metadata[i].utype : undefined;
+            let tapMetadataList = new TapMetadataList();
+            for (let i = 0; i < metadata.length; i++) {
 
-                    // let column = new Column(name, description, unit, datatype, ucd, utype, i);
-                    // columnsmeta.push(column);
-                    let tapMeta = new TapMetadata(name, description, unit, datatype, ucd, utype);
-                    tapMetadataList.addMetadata(tapMeta);
-                }
+                let name = metadata[i].name;
+                let description = (metadata[i].description !== undefined) ? metadata[i].description : undefined;
+                let unit = (metadata[i].unit !== undefined) ? metadata[i].unit : undefined;
+                let datatype = (metadata[i].datatype !== undefined) ? metadata[i].datatype : undefined;
+                let ucd = (metadata[i].ucd !== undefined) ? metadata[i].ucd : undefined;
+                let utype = (metadata[i].utype !== undefined) ? metadata[i].utype : undefined;
 
-                if (data.length > 0) {
-                    // model.addSources(data, columnsmeta);
-                    model.addSources(data, tapMetadataList.metadataList);
-                } else {
-                    console.log("No results found");
-                }
-            } else {
-                console.log('Something went wrong:');
-                console.log(xhr.response);
+                let tapMeta = new TapMetadata(name, description, unit, datatype, ucd, utype);
+                tapMetadataList.addMetadata(tapMeta);
             }
-        };
 
-
-        xhr.send();
+            if (data.length > 0) {
+                model.addSources(data, tapMetadataList.metadataList);
+            } else {
+                console.log("No results found");
+            }
+            eventBus.fireEvent(new RemoveMessageToMsgBoxEvent(msgId));
+        })
 
     }
 
     /**
-     * 
-     * @param {TapRepo} tapRepo  
-     * @param {FootprintSet} model   
-     */
+         * 
+         * @param {TapRepo} tapRepo  
+         * @param {FootprintSet} model   
+         */
     queryObservationByFoV(tapRepo, model) {
-
-        
-
 
         let tablesurl = tapRepo.tapBaseUrl + "/sync?request=doQuery&lang=ADQL&format=json&query=";
 
@@ -371,9 +346,6 @@ class TapRepoSingleton {
         tapTable = model._name;
         tapRa = model.raColumn;
         tapDec = model.decColumn;
-
-        const msgId = model._name +"_"+ (new Date().getTime())
-        eventBus.fireEvent(new AddMessageToMsgBoxEvent(msgId, "Loading data for "+model._name));
 
         // tapGeom = model._geomColumn._name;
         tapPgSphere = undefined;
@@ -394,66 +366,52 @@ class TapRepoSingleton {
         //         "POLYGON('ICRS', " + fovPolyAstro + "))";
         // } else {
 
-            if (tapRepo.adqlFunctionList.includes("POLYGON")) {
-                adqlQuery = "select * " +
-                    "from " + tapTable + " where " +
-                    "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
-                    "POLYGON('ICRS', " + fovPolyAstro + "))";
-            } else if (tapRepo.adqlFunctionList.includes("CIRCLE")) {
+        if (tapRepo.adqlFunctionList.includes("POLYGON")) {
+            adqlQuery = "select * " +
+                "from " + tapTable + " where " +
+                "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
+                "POLYGON('ICRS', " + fovPolyAstro + "))";
+        } else if (tapRepo.adqlFunctionList.includes("CIRCLE")) {
 
-                let center = FoVUtils.getCenterJ2000(global.gl.canvas);
-                let minFoV = global.getSelectedHiPS().getMinFoV();
-                let radius = minFoV / 2;
-                adqlQuery = "select * " +
-                    "from " + tapTable + " where " +
-                    "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
-                    "CIRCLE('ICRS', " + center._raDeg + ", " + center._decDeg + ", " + radius + "))";
-            } else { // for TAP repos with no capabilities exposed
-                let center = FoVUtils.getCenterJ2000(global.gl.canvas);
-                let minFoV = global.getSelectedHiPS().getMinFoV();
-                let radius = minFoV / 2;
-                adqlQuery = "select * " +
-                    "from " + tapTable + " where " +
-                    "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
-                    "CIRCLE('ICRS', " + center._raDeg + ", " + center._decDeg + ", " + radius + "))";
-            }
-        // }
-
-
-
-
-        // ESASky with pgsphere FoV (in case I want to handle it)
-        // let adqlQuery = "select "
-        // adqlQuery += " * " +
-        //     "from "+tapTable+" where " +
-        //     "1=INTERSECTS(fov, " +
-        //     "POLYGON('ICRS', "+fovPolyAstro+"))";
-
+            let center = FoVUtils.getCenterJ2000(global.gl.canvas);
+            let minFoV = global.getSelectedHiPS().getMinFoV();
+            let radius = minFoV / 2;
+            adqlQuery = "select * " +
+                "from " + tapTable + " where " +
+                "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
+                "CIRCLE('ICRS', " + center._raDeg + ", " + center._decDeg + ", " + radius + "))";
+        } else { // for TAP repos with no capabilities exposed
+            let center = FoVUtils.getCenterJ2000(global.gl.canvas);
+            let minFoV = global.getSelectedHiPS().getMinFoV();
+            let radius = minFoV / 2;
+            adqlQuery = "select * " +
+                "from " + tapTable + " where " +
+                "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
+                "CIRCLE('ICRS', " + center._raDeg + ", " + center._decDeg + ", " + radius + "))";
+        }
+        
         queryencoded = encodeURI(adqlQuery);
 
-        let xhr = new XMLHttpRequest();
+        let tapUrl = tapRepo.tapBaseUrl
+        let adql = queryencoded
+        let u = global.corsProxyUrl + "adql?tapurl=" + tapUrl + "&query=" + adql
 
-        console.log(queryencoded);
+        const msgId = model._name + "_" + (new Date().getTime())
+        eventBus.fireEvent(new AddMessageToMsgBoxEvent(msgId, "Loading data for " + model._name));
 
-        var _self = this;
-        // TODO CONVERT TO PROMISE!
-        xhr.open('GET', tablesurl + queryencoded, true);
-        xhr.responseType = 'json';
-        xhr.onload = () => {
-            var status = xhr.status;
-            if (status === 200) {
-                if (xhr.response == null) {
-                    console.log("No data received:");
-                    console.log(xhr.response);
-                    return;
-                }
-                var metadata = xhr.response.metadata;
-                var data = xhr.response.data;
+        return fetch(u, {
+            method: 'GET',
+            mode: 'cors',
+            // headers: {
+            //       'Access-Control-Allow-Origin':'*'
+            //     }
+        }).then(res => res.json()
+        ).then(json => {
+            const metadata = json.metadata;
+            const data = json.data;
 
-                // console.log(metadata);
-                console.log(data.length);
+            console.log(data.length);
 
-                // let columnsmeta = [];
                 let tapMetadataList = new TapMetadataList();
                 for (let i = 0; i < metadata.length; i++) {
 
@@ -464,29 +422,211 @@ class TapRepoSingleton {
                     let ucd = (metadata[i].ucd !== undefined) ? metadata[i].ucd : undefined;
                     let utype = (metadata[i].utype !== undefined) ? metadata[i].utype : undefined;
 
-                    // let column = new Column(name, description, unit, datatype, ucd, utype, i);
-                    // columnsmeta.push(column);
                     let tapMeta = new TapMetadata(name, description, unit, datatype, ucd, utype);
                     tapMetadataList.addMetadata(tapMeta);
                 }
 
                 if (data.length > 0) {
-                    // model.addFootprints(data, columnsmeta);
                     model.addFootprints(data, tapMetadataList.metadataList);
                 } else {
                     console.log("No results found");
                 }
                 eventBus.fireEvent(new RemoveMessageToMsgBoxEvent(msgId));
-            } else {
-                console.log('Something went wrong:');
-                console.log(xhr.response);
-            }
-        };
+            
+        });
 
 
-        xhr.send();
+        // let xhr = new XMLHttpRequest();
+
+        // console.log(queryencoded);
+
+        // var _self = this;
+        // // TODO CONVERT TO PROMISE!
+        // xhr.open('GET', tablesurl + queryencoded, true);
+        // xhr.responseType = 'json';
+        // xhr.onload = () => {
+        //     var status = xhr.status;
+        //     if (status === 200) {
+        //         if (xhr.response == null) {
+        //             console.log("No data received:");
+        //             console.log(xhr.response);
+        //             return;
+        //         }
+        //         var metadata = xhr.response.metadata;
+        //         var data = xhr.response.data;
+
+        //         // console.log(metadata);
+        //         console.log(data.length);
+
+        //         // let columnsmeta = [];
+        //         let tapMetadataList = new TapMetadataList();
+        //         for (let i = 0; i < metadata.length; i++) {
+
+        //             let name = metadata[i].name;
+        //             let description = (metadata[i].description !== undefined) ? metadata[i].description : undefined;
+        //             let unit = (metadata[i].unit !== undefined) ? metadata[i].unit : undefined;
+        //             let datatype = (metadata[i].datatype !== undefined) ? metadata[i].datatype : undefined;
+        //             let ucd = (metadata[i].ucd !== undefined) ? metadata[i].ucd : undefined;
+        //             let utype = (metadata[i].utype !== undefined) ? metadata[i].utype : undefined;
+
+        //             // let column = new Column(name, description, unit, datatype, ucd, utype, i);
+        //             // columnsmeta.push(column);
+        //             let tapMeta = new TapMetadata(name, description, unit, datatype, ucd, utype);
+        //             tapMetadataList.addMetadata(tapMeta);
+        //         }
+
+        //         if (data.length > 0) {
+        //             // model.addFootprints(data, columnsmeta);
+        //             model.addFootprints(data, tapMetadataList.metadataList);
+        //         } else {
+        //             console.log("No results found");
+        //         }
+        //         eventBus.fireEvent(new RemoveMessageToMsgBoxEvent(msgId));
+        //     } else {
+        //         console.log('Something went wrong:');
+        //         console.log(xhr.response);
+        //     }
+        // };
+
+
+        // xhr.send();
 
     }
+
+    // /**
+    //  * 
+    //  * @param {TapRepo} tapRepo  
+    //  * @param {FootprintSet} model   
+    //  */
+    // queryObservationByFoV(tapRepo, model) {
+
+
+
+
+    //     let tablesurl = tapRepo.tapBaseUrl + "/sync?request=doQuery&lang=ADQL&format=json&query=";
+
+
+    //     let tapTable, tapRa, tapDec, tapGeom, tapPgSphere, fovPolyCartesian, fovPolyAstro, queryencoded;
+
+    //     tapTable = model._name;
+    //     tapRa = model.raColumn;
+    //     tapDec = model.decColumn;
+
+    //     const msgId = model._name + "_" + (new Date().getTime())
+    //     eventBus.fireEvent(new AddMessageToMsgBoxEvent(msgId, "Loading data for " + model._name));
+
+    //     // tapGeom = model._geomColumn._name;
+    //     tapPgSphere = undefined;
+    //     if (model._pgSphereColumn !== undefined) {
+    //         tapPgSphere = model._pgSphereColumn._name;
+    //     }
+
+    //     // tapName = (model._nameColumn !== undefined ) ? model._nameColumn._name : undefined;
+    //     fovPolyCartesian = FoVUtils.getFoVPolygon(global.pMatrix, global.camera, global.gl.canvas, global.defaultHips, global.rayPicker);
+    //     fovPolyAstro = FoVUtils.getAstroFoVPolygon(fovPolyCartesian);
+    //     let adqlQuery = undefined;
+
+    //     // not working anymore in esasky
+    //     // if (tapPgSphere !== undefined && tapPgSphere !== null) {
+    //     //     adqlQuery = "select * " +
+    //     //         "from " + tapTable + " where " +
+    //     //         "1=INTERSECTS(" + tapPgSphere + ", " +
+    //     //         "POLYGON('ICRS', " + fovPolyAstro + "))";
+    //     // } else {
+
+    //     if (tapRepo.adqlFunctionList.includes("POLYGON")) {
+    //         adqlQuery = "select * " +
+    //             "from " + tapTable + " where " +
+    //             "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
+    //             "POLYGON('ICRS', " + fovPolyAstro + "))";
+    //     } else if (tapRepo.adqlFunctionList.includes("CIRCLE")) {
+
+    //         let center = FoVUtils.getCenterJ2000(global.gl.canvas);
+    //         let minFoV = global.getSelectedHiPS().getMinFoV();
+    //         let radius = minFoV / 2;
+    //         adqlQuery = "select * " +
+    //             "from " + tapTable + " where " +
+    //             "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
+    //             "CIRCLE('ICRS', " + center._raDeg + ", " + center._decDeg + ", " + radius + "))";
+    //     } else { // for TAP repos with no capabilities exposed
+    //         let center = FoVUtils.getCenterJ2000(global.gl.canvas);
+    //         let minFoV = global.getSelectedHiPS().getMinFoV();
+    //         let radius = minFoV / 2;
+    //         adqlQuery = "select * " +
+    //             "from " + tapTable + " where " +
+    //             "1=CONTAINS(POINT('ICRS'," + tapRa._name + "," + tapDec._name + "), " +
+    //             "CIRCLE('ICRS', " + center._raDeg + ", " + center._decDeg + ", " + radius + "))";
+    //     }
+    //     // }
+
+
+
+
+    //     // ESASky with pgsphere FoV (in case I want to handle it)
+    //     // let adqlQuery = "select "
+    //     // adqlQuery += " * " +
+    //     //     "from "+tapTable+" where " +
+    //     //     "1=INTERSECTS(fov, " +
+    //     //     "POLYGON('ICRS', "+fovPolyAstro+"))";
+
+    //     queryencoded = encodeURI(adqlQuery);
+
+    //     let xhr = new XMLHttpRequest();
+
+    //     console.log(queryencoded);
+
+    //     var _self = this;
+    //     // TODO CONVERT TO PROMISE!
+    //     xhr.open('GET', tablesurl + queryencoded, true);
+    //     xhr.responseType = 'json';
+    //     xhr.onload = () => {
+    //         var status = xhr.status;
+    //         if (status === 200) {
+    //             if (xhr.response == null) {
+    //                 console.log("No data received:");
+    //                 console.log(xhr.response);
+    //                 return;
+    //             }
+    //             var metadata = xhr.response.metadata;
+    //             var data = xhr.response.data;
+
+    //             // console.log(metadata);
+    //             console.log(data.length);
+
+    //             // let columnsmeta = [];
+    //             let tapMetadataList = new TapMetadataList();
+    //             for (let i = 0; i < metadata.length; i++) {
+
+    //                 let name = metadata[i].name;
+    //                 let description = (metadata[i].description !== undefined) ? metadata[i].description : undefined;
+    //                 let unit = (metadata[i].unit !== undefined) ? metadata[i].unit : undefined;
+    //                 let datatype = (metadata[i].datatype !== undefined) ? metadata[i].datatype : undefined;
+    //                 let ucd = (metadata[i].ucd !== undefined) ? metadata[i].ucd : undefined;
+    //                 let utype = (metadata[i].utype !== undefined) ? metadata[i].utype : undefined;
+
+    //                 // let column = new Column(name, description, unit, datatype, ucd, utype, i);
+    //                 // columnsmeta.push(column);
+    //                 let tapMeta = new TapMetadata(name, description, unit, datatype, ucd, utype);
+    //                 tapMetadataList.addMetadata(tapMeta);
+    //             }
+
+    //             if (data.length > 0) {
+    //                 // model.addFootprints(data, columnsmeta);
+    //                 model.addFootprints(data, tapMetadataList.metadataList);
+    //             } else {
+    //                 console.log("No results found");
+    //             }
+    //             eventBus.fireEvent(new RemoveMessageToMsgBoxEvent(msgId));
+    //         } else {
+    //             console.log('Something went wrong:');
+    //             console.log(xhr.response);
+    //         }
+    //     };
+
+
+    //     xhr.send();
+
+    // }
 
     addCatalogue(catalogue) {
         this._sourceCatalogues.push(catalogue);

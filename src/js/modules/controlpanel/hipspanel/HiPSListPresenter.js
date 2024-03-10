@@ -52,9 +52,9 @@ class HiPSListPresenter {
 							// 	dtIcon = "scissor.svg";
 							// }
 
-							console.log(config.defaultHipsUrl)
-							console.log(hipsurl.replace('http:','').replace('https:',''))
-							console.log(hipsurl.replace('http:','').replace('https:','') == config)
+							// console.log(config.defaultHipsUrl)
+							// console.log(hipsurl.replace('http:','').replace('https:',''))
+							// console.log(hipsurl.replace('http:','').replace('https:','') == config)
 
 							// DEFAULT HIPS SELECTION!!!
 							// let selected = global.defaultHips.name === descriptor.surveyName && config.defaultHipsUrl == hipsurl.replace('/http:','').replace('/https:','') ? true : false;
