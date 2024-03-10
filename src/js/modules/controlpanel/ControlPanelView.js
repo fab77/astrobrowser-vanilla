@@ -20,11 +20,11 @@ class ControlPanelView {
 			"	<div id='catalogueButtonText'>Overlay source catalogues on top of a map</div>" +
 			"	<img id='footprintsButton' class='controlButton' src='images/new_footprints.png' />" +
 			"	<div id='footprintButtonText'>Overlay observation footprints on top of a map</div>" +
-			"	<img id='mapsButton' class='controlButton' src='images/mapbutton2.png' />" +
+			"	<img id='mapsButton' class='controlButton' src='images/new_maps.png' />" +
 			"	<div id='mapsButtonText'>Sky map selection</div>" +
 			"	<img id='settingsButton' class='controlButton' src='images/new_settings.png' />" +
 			"	<div id='settingsButtonText'>Settings</div>" +
-			"	<img id='cutoutButton' class='controlButton' src='images/settings.png' />" +
+			"	<img id='cutoutButton' class='controlButton' src='images/new_scissors.png' />" +
 			"	<div id='cutoutButtonText'>Data Explorer</div>" +
 			"</div>" +
 			"<div id='settings-popup'></div>";

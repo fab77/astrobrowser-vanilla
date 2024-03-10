@@ -66,9 +66,9 @@ body {
 }
 
 #metadata_button {
-	bottom: 0px;
+	bottom: 2px;
 	position: absolute;
-	right: 0px;
+	right: 10px;
 	padding: 1px;
 }
 
