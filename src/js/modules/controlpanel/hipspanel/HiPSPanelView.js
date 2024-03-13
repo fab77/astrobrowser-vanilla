@@ -46,9 +46,11 @@ class HiPSPanelView {
                             formatter: (cell) => {
                                 const value = cell.getValue();
                                 if (value) {
-                                    return `<input type="checkbox" checked/>`;
+                                    // return `<input type="checkbox" checked/>`;
+                                    return `<input name="hips_selection" type="radio" checked/>`;
                                 } else {
-                                    return `<input type="checkbox" />`;
+                                    // return `<input type="checkbox" />`;
+                                    return `<input name="hips_selection" type="radio" />`;
                                 }
                             },
 
@@ -124,7 +126,7 @@ class HiPSPanelView {
                 table.on("cellClick", function (e, cell) {
                     //e - the click event object
                     //cell - cell component
-                    if (e.target.type == 'checkbox') {
+                    if (e.target.type == 'checkbox' || e.target.type == 'radio') {
                         hipsSelectionHandler(cell._cell.row.data.descriptor, e.target.checked, cell._cell.row.data.id, cell._cell.row.data.hips, hipsNodeId, caller)
                         cell._cell.row.moveToRow(0, true)
                         // cell._cell.row.move(1, true)

@@ -64,7 +64,8 @@ class CataloguePanelView {
                             field: "name",
                             width: 350,
                             hozAlign: "left",
-                            formatter: "plaintext"
+                            formatter: "plaintext",
+                            headerFilter:"input"
                         },
                         {
                             title: "Settings", field: "settings", width: 25, formatter: "image", formatterParams: {

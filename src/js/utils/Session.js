@@ -76,8 +76,7 @@ class Session {
     }
 
     deactivateCatalogue(catalogue) {
-        var i;
-        for (i = 0; i < this._activeSourceCatalogues.length; i++) {
+        for (let i = 0; i < this._activeSourceCatalogues.length; i++) {
             if (this._activeSourceCatalogues[i] == catalogue) {
                 this._activeSourceCatalogues[i].clearSources();
                 this._activeSourceCatalogues.splice(i, 1);
@@ -91,8 +90,7 @@ class Session {
     }
 
     deactivateFootprintSet(fset) {
-        var i;
-        for (i = 0; i < this._activeFootprintsCatalogues.length; i++) {
+        for (let i = 0; i < this._activeFootprintsCatalogues.length; i++) {
             if (this._activeFootprintsCatalogues[i] == fset) {
                 this._activeFootprintsCatalogues[i].clearFootprints();
                 this._activeFootprintsCatalogues.splice(i, 1);
@@ -108,8 +106,7 @@ class Session {
     }
 
     deactivateHiPS(hips) {
-        var i;
-        for (i = 0; i < this._activeHiPS.length; i++) {
+        for (let i = 0; i < this._activeHiPS.length; i++) {
             if (this._activeHiPS[i] == hips) {
                 this._activeHiPS.splice(i, 1);
                 break;

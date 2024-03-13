@@ -459,8 +459,8 @@ class MainPresenter {
 
 		}
 
-		window.addEventListener('keydown', handleKeyPress);
-		window.addEventListener('keyup', handleKeyUp);
+		// window.addEventListener('keydown', handleKeyPress);
+		// window.addEventListener('keyup', handleKeyUp);
 
 		this.view.canvas.onpointerdown = handleMouseDown;
 		this.view.canvas.onpointerup = handleMouseUp;

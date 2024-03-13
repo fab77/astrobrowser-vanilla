@@ -169,29 +169,55 @@ class HiPSListPresenter {
 		caller._cutoutPresenter.toggle(descriptor)
 	}
 
-	hipsSelectionHandler(descriptor, checked, rowId, hips, hipsNodeId, caller) {
-		if (!checked) {
-			session.deactivateHiPS(hips);
-		} else {
-			// let format = descriptor.imgFormats[1]; // getting first format available (//TODO check that it's not fits)
-			let formats = descriptor.imgFormats; // getting first format available (//TODO check that it's not fits)
-			let format = undefined;
-			formats.forEach( (f) => {
-				if (f == 'png' || f == 'jpg')
-					format = f;
-			});
-			// let opacity = this.view.getSelectedOpacity() / 100; // TODO handle opacity here
-			let opacity = 1.0; // TODO not used in HiPS. review it! and review global.defaultHiPS in which I am passing 9 (max order) instead of opacity
-			// const isGalactic = descriptor.hipsFrame == 'galactic' ? true : false; // TODO handle Galactic frame
-			const isGalactic = false;
-			let hips = new HiPS(1, [0.0, 0.0, 0.0],
-				0,
-				0, descriptor.surveyName,
-				descriptor.url, format,
-				opacity, isGalactic, descriptor);
-			session.activateHiPS(hips);
-			caller._view.hipsActivated(rowId, hips, hipsNodeId);
-		}
+	hipsSelectionHandler(descriptor, checked, rowId, remove_thi_variable_hips, hipsNodeId, caller) {
+		console.log(session.activeHiPS)
+		session.activeHiPS.forEach( (h) => {
+			console.log("deactivating hips "+ h)
+			session.deactivateHiPS(h);
+		})
+		console.log(session.activeHiPS)
+
+		let formats = descriptor.imgFormats; // getting first format available (//TODO check that it's not fits)
+		let format;
+		formats.forEach( (f) => {
+			if (f == 'png' || f == 'jpg')
+				format = f;
+		});
+		// let opacity = this.view.getSelectedOpacity() / 100; // TODO handle opacity here
+		let opacity = 1.0; // TODO not used in HiPS. review it! and review global.defaultHiPS in which I am passing 9 (max order) instead of opacity
+		// const isGalactic = descriptor.hipsFrame == 'galactic' ? true : false; // TODO handle Galactic frame
+		const isGalactic = false;
+		let hips = new HiPS(1, [0.0, 0.0, 0.0],
+			0,
+			0, descriptor.surveyName,
+			descriptor.url, format,
+			opacity, isGalactic, descriptor);
+		session.activateHiPS(hips);
+		caller._view.hipsActivated(rowId, hips, hipsNodeId);
+
+
+		// if (!checked) {
+		// 	session.deactivateHiPS(hips);
+		// } else {
+		// 	// let format = descriptor.imgFormats[1]; // getting first format available (//TODO check that it's not fits)
+		// 	let formats = descriptor.imgFormats; // getting first format available (//TODO check that it's not fits)
+		// 	let format;
+		// 	formats.forEach( (f) => {
+		// 		if (f == 'png' || f == 'jpg')
+		// 			format = f;
+		// 	});
+		// 	// let opacity = this.view.getSelectedOpacity() / 100; // TODO handle opacity here
+		// 	let opacity = 1.0; // TODO not used in HiPS. review it! and review global.defaultHiPS in which I am passing 9 (max order) instead of opacity
+		// 	// const isGalactic = descriptor.hipsFrame == 'galactic' ? true : false; // TODO handle Galactic frame
+		// 	const isGalactic = false;
+		// 	let hips = new HiPS(1, [0.0, 0.0, 0.0],
+		// 		0,
+		// 		0, descriptor.surveyName,
+		// 		descriptor.url, format,
+		// 		opacity, isGalactic, descriptor);
+		// 	session.activateHiPS(hips);
+		// 	caller._view.hipsActivated(rowId, hips, hipsNodeId);
+		// }
 	}
 
 
