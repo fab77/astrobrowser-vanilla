@@ -109,7 +109,7 @@ class AllSky {
 		// const orderjump = tgtHpxOrder - this._order;
 		// const tgtHealpix = global.getHealpix(tgtHpxOrder)
 		
-		const orderjump = 1;
+		const orderjump = 1;	
 		const tgtHpxOrder = this._order + orderjump;
 		const healpix = global.getHealpix(this._order)
 		const tgtHealpix = global.getHealpix(tgtHpxOrder)
@@ -187,8 +187,9 @@ class AllSky {
 		const factor = 2 ** (orderjump)
 		
 		// 64x64 pixel into the AllSky image
-		const s_order3_step = 1 / 27 
-		const t_order3_step = 1 / 29 
+		const s_order3_step = 1 / 27
+		// const t_order3_step = 1 / 29 
+		const t_order3_step = s_order3_step
 
 		const s_image_step = s_order3_step / factor;
 		const t_image_step = t_order3_step / factor;
@@ -217,19 +218,17 @@ class AllSky {
 				this.vertexPosition[20 * this.vidx] = facesVec3Array[0].x;
 				this.vertexPosition[20 * this.vidx + 1] = facesVec3Array[0].y;
 				this.vertexPosition[20 * this.vidx + 2] = facesVec3Array[0].z;
-				// this.vertexPosition[20 * this.vidx + 3] = s_step + base_s - s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t);
 				//bottom right
-				this.vertexPosition[20 * this.vidx + 3] = base_image_s + (s_image_step * dx);
+				this.vertexPosition[20 * this.vidx + 3] = base_image_s + (s_image_step * dx) + s_image_step;
 				this.vertexPosition[20 * this.vidx + 4] = base_image_t + (t_image_step * dy) ;
 
 				// top left 
 				this.vertexPosition[20 * this.vidx + 5] = facesVec3Array[1].x;
 				this.vertexPosition[20 * this.vidx + 6] = facesVec3Array[1].y;
 				this.vertexPosition[20 * this.vidx + 7] = facesVec3Array[1].z;
-				// this.vertexPosition[20 * this.vidx + 8] = s_step + base_s - s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 9] = 1 - base_t - t_pixel_size;
 				//top right
+				// this.vertexPosition[20 * this.vidx + 8] = base_image_s + (s_image_step * dx) + s_image_step;
+				// this.vertexPosition[20 * this.vidx + 9] = base_image_t + (t_image_step * dy) + t_image_step;
 				this.vertexPosition[20 * this.vidx + 8] = base_image_s + (s_image_step * dx) + s_image_step;
 				this.vertexPosition[20 * this.vidx + 9] = base_image_t + (t_image_step * dy) + t_image_step;
 
@@ -237,21 +236,21 @@ class AllSky {
 				this.vertexPosition[20 * this.vidx + 10] = facesVec3Array[2].x;
 				this.vertexPosition[20 * this.vidx + 11] = facesVec3Array[2].y;
 				this.vertexPosition[20 * this.vidx + 12] = facesVec3Array[2].z;
-				// this.vertexPosition[20 * this.vidx + 13] = base_s;
-				// this.vertexPosition[20 * this.vidx + 14] = 1 - base_t -	 t_pixel_size;
 				//top left
-				this.vertexPosition[20 * this.vidx + 13] = base_image_s ;
-				this.vertexPosition[20 * this.vidx + 14] = 1 - base_image_t;
+				// this.vertexPosition[20 * this.vidx + 13] = base_image_s ;
+				// this.vertexPosition[20 * this.vidx + 14] = 1 - base_image_t;
+				this.vertexPosition[20 * this.vidx + 13] = base_image_s  + (s_image_step * dx);
+				this.vertexPosition[20 * this.vidx + 14] = base_image_t + (t_image_step * dy) + t_image_step;
 				
 				// bottom right
 				this.vertexPosition[20 * this.vidx + 15] = facesVec3Array[3].x;
 				this.vertexPosition[20 * this.vidx + 16] = facesVec3Array[3].y;
 				this.vertexPosition[20 * this.vidx + 17] = facesVec3Array[3].z;
-				// this.vertexPosition[20 * this.vidx + 18] = base_s + s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t);
 				//bottom left
-				this.vertexPosition[20 * this.vidx + 18] = base_image_s;
-				this.vertexPosition[20 * this.vidx + 19] = 1 - base_image_t - (t_image_step * dy) ;
+				// this.vertexPosition[20 * this.vidx + 18] = base_image_s;
+				// this.vertexPosition[20 * this.vidx + 19] = 1 - base_image_t - (t_image_step * dy) ;
+				this.vertexPosition[20 * this.vidx + 18] = base_image_s + (s_image_step * dx);
+				this.vertexPosition[20 * this.vidx + 19] = base_image_t + (t_image_step * dy);
 				
 				
 				this.vidx++;
@@ -277,15 +276,18 @@ class AllSky {
 		const s_step = 1 / (27 * factor);
 		//0.034482759
 		const t_step = 1 / (29 * factor);
+		// const t_step = s_step;
 		
 
-		let s_pxXtile = 1728 / (27 * factor)
-		const s_pixel_size = s_step / s_pxXtile
+		// let s_pxXtile = 1728 / (27 * factor)
+		// const s_pixel_size = s_step / s_pxXtile
+		const s_pixel_size = s_step / 64
 		// const epsilon_s = 0
 
 		
-		let t_pxXtile = 1856 / (29 * factor)
-		const t_pixel_size = t_step / t_pxXtile
+		// let t_pxXtile = 1856 / (29 * factor)
+		// const t_pixel_size = t_step / t_pxXtile
+		const t_pixel_size = t_step / 64
 		// const epsilon_t = 0
 
 		const base_s = factor * s_step * sindex + s_step * qx
@@ -298,45 +300,37 @@ class AllSky {
 				// uindex = dy - (xyf.iy << orderjump);
 				// vindex = dx - (xyf.ix << orderjump);
 
-				// bottom left 
+				//bottom right
 				this.vertexPosition[20 * this.vidx] = facesVec3Array[0].x;
 				this.vertexPosition[20 * this.vidx + 1] = facesVec3Array[0].y;
 				this.vertexPosition[20 * this.vidx + 2] = facesVec3Array[0].z;
 				this.vertexPosition[20 * this.vidx + 3] = s_step + base_s - s_pixel_size;
-				this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t);
-				//bottom right
-				// this.vertexPosition[20 * this.vidx + 3] = (s_step*dy) + s_step + base_s - s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 4] = (t_step*dx) + 1 - t_step - base_t;
-
-				// top left 
+				// this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t);
+				this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t) + t_pixel_size;
+				
+				//top right
 				this.vertexPosition[20 * this.vidx + 5] = facesVec3Array[1].x;
 				this.vertexPosition[20 * this.vidx + 6] = facesVec3Array[1].y;
 				this.vertexPosition[20 * this.vidx + 7] = facesVec3Array[1].z;
 				this.vertexPosition[20 * this.vidx + 8] = s_step + base_s - s_pixel_size;
 				this.vertexPosition[20 * this.vidx + 9] = 1 - base_t - t_pixel_size;
-				//top right
-				// this.vertexPosition[20 * this.vidx + 8] = (s_step*dy) + s_step + base_s - s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 9] = (t_step*dx) + 1 - base_t - t_pixel_size;
-
-				// top right
+				
+				//top left
 				this.vertexPosition[20 * this.vidx + 10] = facesVec3Array[2].x;
 				this.vertexPosition[20 * this.vidx + 11] = facesVec3Array[2].y;
 				this.vertexPosition[20 * this.vidx + 12] = facesVec3Array[2].z;
-				this.vertexPosition[20 * this.vidx + 13] = base_s;
-				this.vertexPosition[20 * this.vidx + 14] = 1 - base_t -	 t_pixel_size;
-				//top left
-				// this.vertexPosition[20 * this.vidx + 13] = (s_step*dy) + base_s;
-				// this.vertexPosition[20 * this.vidx + 14] = (t_step*dx) + 1 - base_t -	t_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 13] = base_s;
+				this.vertexPosition[20 * this.vidx + 13] = base_s + s_pixel_size;
+				this.vertexPosition[20 * this.vidx + 14] = 1 - base_t - t_pixel_size;
 				
-				// bottom right
+				//bottom left
 				this.vertexPosition[20 * this.vidx + 15] = facesVec3Array[3].x;
 				this.vertexPosition[20 * this.vidx + 16] = facesVec3Array[3].y;
 				this.vertexPosition[20 * this.vidx + 17] = facesVec3Array[3].z;
+				// this.vertexPosition[20 * this.vidx + 18] = base_s + s_pixel_size;
 				this.vertexPosition[20 * this.vidx + 18] = base_s + s_pixel_size;
-				this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t);
-				//bottom left
-				// this.vertexPosition[20 * this.vidx + 18] = (s_step*dy) + base_s;
-				// this.vertexPosition[20 * this.vidx + 19] = (t_step*dx) + 1 - t_step - base_t;
+				// this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t);
+				this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t) + t_pixel_size;
 				
 				
 				this.vidx++;

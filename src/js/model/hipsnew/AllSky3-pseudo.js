@@ -119,8 +119,10 @@ class AllSky {
 		let tex_sindex = 0;
 		let tex_tindex = 0;
 		const tgt_half_xy_step = 2 ** (orderjump -1)
-		const subfaces = 4 * orderjump
-		const subfacesxedge = 2 * orderjump
+		// const subfaces = 4 * orderjump
+		// const subfacesxedge = 2 * orderjump
+		const subfaces = 2 ** orderjump
+		const subfacesxedge = subfaces / 2 
 		for (let t = 0; t < maxTiles; t++) { // 768 tiles from order 3
 			// TODO if not visible, skip it?
 			const xyf = order3Hpx.nest2xyf(t);
@@ -135,26 +137,29 @@ class AllSky {
 			
 			// splitting order 3 tile into 4 (order 4 tiles)
 			// quadrant (0,0)
-			this.setGeomAndTextureMapping(tex_sindex, tex_tindex, 
-				xyf.ix * subfacesxedge, xyf.ix * subfacesxedge + (subfacesxedge / 2), 
-				xyf.iy * subfacesxedge, xyf.iy * subfacesxedge + (subfacesxedge / 2));
-			// quadrant (1,0)
-			this.setGeomAndTextureMapping(tex_sindex, tex_tindex, 
-				xyf.ix * subfacesxedge + (subfacesxedge / 2), xyf.ix * subfacesxedge + subfacesxedge, 
-				xyf.iy * subfacesxedge, xyf.iy * subfacesxedge + (subfacesxedge / 2));
-			// quadrant (0,1)
-			this.setGeomAndTextureMapping(tex_sindex, tex_tindex, 
-				xyf.ix * subfacesxedge, xyf.ix * subfacesxedge + (subfacesxedge / 2), 
-				xyf.iy * subfacesxedge + (subfacesxedge / 2), xyf.iy * subfacesxedge + subfacesxedge);
-			// quadrant (1,1)
-			this.setGeomAndTextureMapping(tex_sindex, tex_tindex, 
-				xyf.ix * subfacesxedge + (subfacesxedge / 2), xyf.ix * subfacesxedge + subfacesxedge, 
-				xyf.iy * subfacesxedge + (subfacesxedge / 2), xyf.iy * subfacesxedge + subfacesxedge);
+			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			// TODO CHECK: I PASS 6 variables BUT setGeomAndTextureMapping ACCEPTS 5!!!
+			// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			// this.setGeomAndTextureMapping(tex_sindex, tex_tindex, 
+			// 	xyf.ix * subfacesxedge, xyf.ix * subfacesxedge + (subfacesxedge / 2), 
+			// 	xyf.iy * subfacesxedge, xyf.iy * subfacesxedge + (subfacesxedge / 2));
+			// // quadrant (1,0)
+			// this.setGeomAndTextureMapping(tex_sindex, tex_tindex, 
+			// 	xyf.ix * subfacesxedge + (subfacesxedge / 2), xyf.ix * subfacesxedge + subfacesxedge, 
+			// 	xyf.iy * subfacesxedge, xyf.iy * subfacesxedge + (subfacesxedge / 2));
+			// // quadrant (0,1)
+			// this.setGeomAndTextureMapping(tex_sindex, tex_tindex, 
+			// 	xyf.ix * subfacesxedge, xyf.ix * subfacesxedge + (subfacesxedge / 2), 
+			// 	xyf.iy * subfacesxedge + (subfacesxedge / 2), xyf.iy * subfacesxedge + subfacesxedge);
+			// // quadrant (1,1)
+			// this.setGeomAndTextureMapping(tex_sindex, tex_tindex, 
+			// 	xyf.ix * subfacesxedge + (subfacesxedge / 2), xyf.ix * subfacesxedge + subfacesxedge, 
+			// 	xyf.iy * subfacesxedge + (subfacesxedge / 2), xyf.iy * subfacesxedge + subfacesxedge);
 
-			// this.setGeomAndTextureMapping(tex_sindex,tex_tindex, xyf.face, 0, 0);
-			// this.setGeomAndTextureMapping(tex_sindex,tex_tindex, xyf.face, 1, 0);
-			// this.setGeomAndTextureMapping(tex_sindex,tex_tindex, xyf.face, 0, 1);
-			// this.setGeomAndTextureMapping(tex_sindex,tex_tindex, xyf.face, 1, 1);
+			this.setGeomAndTextureMapping(tex_sindex,tex_tindex, xyf.face, 0, 0);
+			this.setGeomAndTextureMapping(tex_sindex,tex_tindex, xyf.face, 1, 0);
+			this.setGeomAndTextureMapping(tex_sindex,tex_tindex, xyf.face, 0, 1);
+			this.setGeomAndTextureMapping(tex_sindex,tex_tindex, xyf.face, 1, 1);
 
 			tex_sindex++;
 			if (tex_sindex == 27 ) {
