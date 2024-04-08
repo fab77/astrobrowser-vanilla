@@ -95,6 +95,7 @@ class AllSky {
 		global.gl.texImage2D(global.gl.TEXTURE_2D, 0, global.gl.RGBA, global.gl.RGBA, global.gl.UNSIGNED_BYTE, this._image);
 		global.gl.generateMipmap(global.gl.TEXTURE_2D);
 		global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_MIN_FILTER, global.gl.LINEAR_MIPMAP_LINEAR);
+		global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_MAG_FILTER, global.gl.LINEAR_MIPMAP_LINEAR);
 		global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_WRAP_S, global.gl.CLAMP_TO_EDGE);
 		global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_WRAP_T, global.gl.CLAMP_TO_EDGE);
 	}
@@ -110,6 +111,7 @@ class AllSky {
 		// const tgtHealpix = global.getHealpix(tgtHpxOrder)
 		
 		const orderjump = 1;	
+		// const orderjump = 2;	
 		const tgtHpxOrder = this._order + orderjump;
 		const healpix = global.getHealpix(this._order)
 		const tgtHealpix = global.getHealpix(tgtHpxOrder)
@@ -178,6 +180,105 @@ class AllSky {
 		global.gl.bufferData(global.gl.ELEMENT_ARRAY_BUFFER, vertexIndices, global.gl.STATIC_DRAW);
 	};
 
+
+	
+
+	setupPositionAndTexture4Quadrant(sindex, tindex, dxmin, dxmax, dymin, dymax, tgthealpix, xyf, qx, qy) {
+
+		let facesVec3Array = new Array();
+		
+		// const factor = 2 ** (tgthealpix.order - 3)
+		const factor = 2 ** (tgthealpix.order - 3)
+		// const factor = this._numFacesXTile / 2
+		
+		// const uindex = sindex; 
+		// const vindex = tindex;
+		
+		// 64x64 pixel into the AllSky image
+
+		//0.037037037
+		const s_step = 1 / (27 * factor);
+		//0.034482759
+		const t_step = 1 / (29 * factor);
+		// const t_step = s_step;
+		
+
+		// let s_pxXtile = 1728 / (27 * factor)
+		// const s_pixel_size = s_step / s_pxXtile
+		const s_pixel_size = s_step / 64
+		// const s_pixel_size = s_step / 128
+		// const s_pixel_size = s_step / 32
+		// const s_pixel_size = 0
+		
+
+		
+		// let t_pxXtile = 1856 / (29 * factor)
+		// const t_pixel_size = t_step / t_pxXtile
+		const t_pixel_size = t_step / 64
+		// const t_pixel_size = t_step / 128
+		// const t_pixel_size = t_step / 32
+		// const t_pixel_size = 0
+		
+		const base_s = factor * s_step * sindex + s_step * qx
+		const base_t = factor * t_step * tindex + t_step * qy
+		for (let dx = dxmin; dx < dxmax; dx++) {
+			for (let dy = dymin; dy < dymax; dy++) {
+
+				// console.log(tgthealpix.xyf2nest(dx, dy, xyf.face))
+				facesVec3Array = tgthealpix.getPointsForXyfNoStep(dx, dy, xyf.face);
+				// let tileno = tgthealpix.xyf2nest(dx, dy, xyf.face)
+				// uindex = dy - (xyf.iy << orderjump);
+				// vindex = dx - (xyf.ix << orderjump);
+
+				//bottom right
+				this.vertexPosition[20 * this.vidx] = facesVec3Array[0].x;
+				this.vertexPosition[20 * this.vidx + 1] = facesVec3Array[0].y;
+				this.vertexPosition[20 * this.vidx + 2] = facesVec3Array[0].z;
+
+				this.vertexPosition[20 * this.vidx + 3] = s_step + base_s - s_pixel_size;
+				this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t) + t_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t);
+				// this.vertexPosition[20 * this.vidx + 3] = s_step * (dx+1) + base_s - s_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step * (dy+1) + base_t) + t_pixel_size;
+				
+				//top right
+				this.vertexPosition[20 * this.vidx + 5] = facesVec3Array[1].x;
+				this.vertexPosition[20 * this.vidx + 6] = facesVec3Array[1].y;
+				this.vertexPosition[20 * this.vidx + 7] = facesVec3Array[1].z;
+
+				this.vertexPosition[20 * this.vidx + 8] = s_step + base_s - s_pixel_size;
+				this.vertexPosition[20 * this.vidx + 9] = 1 - base_t - t_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 8] = s_step  * (dx+1) + base_s - s_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 9] = 1 - (base_t + t_step * dy) - t_pixel_size;
+				
+				//top left
+				this.vertexPosition[20 * this.vidx + 10] = facesVec3Array[2].x;
+				this.vertexPosition[20 * this.vidx + 11] = facesVec3Array[2].y;
+				this.vertexPosition[20 * this.vidx + 12] = facesVec3Array[2].z;
+
+				// this.vertexPosition[20 * this.vidx + 13] = base_s;
+				this.vertexPosition[20 * this.vidx + 13] = base_s + s_pixel_size;
+				this.vertexPosition[20 * this.vidx + 14] = 1 - base_t - t_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 13] = base_s + s_step * dx + s_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 14] = 1 - (base_t + t_step * dy) - t_pixel_size;
+				
+				//bottom left
+				this.vertexPosition[20 * this.vidx + 15] = facesVec3Array[3].x;
+				this.vertexPosition[20 * this.vidx + 16] = facesVec3Array[3].y;
+				this.vertexPosition[20 * this.vidx + 17] = facesVec3Array[3].z;
+
+				this.vertexPosition[20 * this.vidx + 18] = base_s + s_pixel_size;
+				this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t) + t_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t);
+				// this.vertexPosition[20 * this.vidx + 18] = base_s + s_step * dx + s_pixel_size;
+				// this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step * (dy+1) + base_t) + t_pixel_size;
+				
+				
+				this.vidx++;
+			}
+		}
+
+	}
 
 	setupPositionAndTexture4Quadrant2(sindex, tindex, orderjump, tgthealpix, xyf, qx, qy) {
 
@@ -251,86 +352,6 @@ class AllSky {
 				// this.vertexPosition[20 * this.vidx + 19] = 1 - base_image_t - (t_image_step * dy) ;
 				this.vertexPosition[20 * this.vidx + 18] = base_image_s + (s_image_step * dx);
 				this.vertexPosition[20 * this.vidx + 19] = base_image_t + (t_image_step * dy);
-				
-				
-				this.vidx++;
-			}
-		}
-
-	}
-
-	setupPositionAndTexture4Quadrant(sindex, tindex, dxmin, dxmax, dymin, dymax, tgthealpix, xyf, qx, qy) {
-
-		let facesVec3Array = new Array();
-		
-		// const factor = 2 ** (tgthealpix.order - 3)
-		const factor = 2 * (tgthealpix.order - 3)
-		// const factor = this._numFacesXTile / 2
-		
-		// const uindex = sindex; 
-		// const vindex = tindex;
-		
-		// 64x64 pixel into the AllSky image
-
-		//0.037037037
-		const s_step = 1 / (27 * factor);
-		//0.034482759
-		const t_step = 1 / (29 * factor);
-		// const t_step = s_step;
-		
-
-		// let s_pxXtile = 1728 / (27 * factor)
-		// const s_pixel_size = s_step / s_pxXtile
-		const s_pixel_size = s_step / 64
-		// const epsilon_s = 0
-
-		
-		// let t_pxXtile = 1856 / (29 * factor)
-		// const t_pixel_size = t_step / t_pxXtile
-		const t_pixel_size = t_step / 64
-		// const epsilon_t = 0
-
-		const base_s = factor * s_step * sindex + s_step * qx
-		const base_t = factor * t_step * tindex + t_step * qy
-		for (let dx = dxmin; dx < dxmax; dx++) {
-			for (let dy = dymin; dy < dymax; dy++) {
-
-				facesVec3Array = tgthealpix.getPointsForXyfNoStep(dx, dy, xyf.face);
-				// let tileno = tgthealpix.xyf2nest(dx, dy, xyf.face)
-				// uindex = dy - (xyf.iy << orderjump);
-				// vindex = dx - (xyf.ix << orderjump);
-
-				//bottom right
-				this.vertexPosition[20 * this.vidx] = facesVec3Array[0].x;
-				this.vertexPosition[20 * this.vidx + 1] = facesVec3Array[0].y;
-				this.vertexPosition[20 * this.vidx + 2] = facesVec3Array[0].z;
-				this.vertexPosition[20 * this.vidx + 3] = s_step + base_s - s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t);
-				this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t) + t_pixel_size;
-				
-				//top right
-				this.vertexPosition[20 * this.vidx + 5] = facesVec3Array[1].x;
-				this.vertexPosition[20 * this.vidx + 6] = facesVec3Array[1].y;
-				this.vertexPosition[20 * this.vidx + 7] = facesVec3Array[1].z;
-				this.vertexPosition[20 * this.vidx + 8] = s_step + base_s - s_pixel_size;
-				this.vertexPosition[20 * this.vidx + 9] = 1 - base_t - t_pixel_size;
-				
-				//top left
-				this.vertexPosition[20 * this.vidx + 10] = facesVec3Array[2].x;
-				this.vertexPosition[20 * this.vidx + 11] = facesVec3Array[2].y;
-				this.vertexPosition[20 * this.vidx + 12] = facesVec3Array[2].z;
-				// this.vertexPosition[20 * this.vidx + 13] = base_s;
-				this.vertexPosition[20 * this.vidx + 13] = base_s + s_pixel_size;
-				this.vertexPosition[20 * this.vidx + 14] = 1 - base_t - t_pixel_size;
-				
-				//bottom left
-				this.vertexPosition[20 * this.vidx + 15] = facesVec3Array[3].x;
-				this.vertexPosition[20 * this.vidx + 16] = facesVec3Array[3].y;
-				this.vertexPosition[20 * this.vidx + 17] = facesVec3Array[3].z;
-				// this.vertexPosition[20 * this.vidx + 18] = base_s + s_pixel_size;
-				this.vertexPosition[20 * this.vidx + 18] = base_s + s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t);
-				this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t) + t_pixel_size;
 				
 				
 				this.vidx++;

@@ -13,23 +13,23 @@ class FoVHelper {
 
         let order = 3;
 
+        // if (fov >= 179) {
+        //     order = 0;
+        // } else if (fov >= 90) {
+        //     order = 1;
+        // } else if (fov >= 30) {
+        //     order = 2;
+        // } else if (fov >= 12.5) {
+        //     order = 3;
         if (fov >= 179) {
             order = 0;
         } else if (fov >= 90) {
             order = 1;
         } else if (fov >= 30) {
             order = 2;
-        } else if (fov >= 12.5) {
+        } else if (fov >= 20) {
             order = 3;
 
-        // if (fov >= 179) {
-        //     order = 0;
-        // } else if (fov >= 90) {
-        //     order = 1;
-        // } else if (fov >= 40) {
-        //     order = 2;
-        // } else if (fov >= 12.5) {
-        //     order = 3;
         } else if (fov >= 6) {
             order = 4;
         } else if (fov >= 3.2) {

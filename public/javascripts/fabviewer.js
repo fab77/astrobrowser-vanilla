@@ -54675,9 +54675,9 @@ class HealpixGrid extends _AbstractSkyEntity_js__WEBPACK_IMPORTED_MODULE_1__["de
 
 /***/ }),
 
-/***/ "./src/js/model/hipsnew/AllSky3.js":
+/***/ "./src/js/model/hipsnew/AllSky7.js":
 /*!*****************************************!*\
-  !*** ./src/js/model/hipsnew/AllSky3.js ***!
+  !*** ./src/js/model/hipsnew/AllSky7.js ***!
   \*****************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
@@ -54689,12 +54689,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../shaders/HiPSShaderProgram.js */ "./src/js/shaders/HiPSShaderProgram.js");
 /* harmony import */ var _Global_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../Global.js */ "./src/js/Global.js");
 /* harmony import */ var _TileBuffer_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TileBuffer.js */ "./src/js/model/hipsnew/TileBuffer.js");
-/* harmony import */ var healpixjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! healpixjs */ "./node_modules/healpixjs/lib-esm/index.js");
+/* harmony import */ var canvas__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! canvas */ "./node_modules/canvas/browser.js");
+/* harmony import */ var _AllSkyTile_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./AllSkyTile.js */ "./src/js/model/hipsnew/AllSkyTile.js");
 
 
 
 
 
+// import { Xyf } from 'healpixjs';
+
+const { createCanvas } = canvas__WEBPACK_IMPORTED_MODULE_3__;
 
 
 class AllSky {
@@ -54711,7 +54715,8 @@ class AllSky {
 		this._isGalacticHips = hips.isGalacticHips;
 
 		// this._order = order;
-		this._order = 3;
+		// this._hipsRefOrder = global.HIPS_REF_ORDER; // used for geometry and texture mapping
+		this._hipsTextureOrder = 3; // AllSky is a map of order 3 tiles
 
 		this.opacity = 1.00;
 
@@ -54745,291 +54750,62 @@ class AllSky {
 
 	imageLoaded() {
 
-		this.textureLoaded();
-		this.initModelBuffer();
-		// global.gl.activeTexture(global.gl.TEXTURE0 + this._hipsShaderIndex);
-		// global.gl.bindTexture(global.gl.TEXTURE_2D, this._texture);
-		// global.gl.texImage2D(global.gl.TEXTURE_2D, 0, global.gl.RGBA, global.gl.RGBA, global.gl.UNSIGNED_BYTE, this._image);
-		// global.gl.generateMipmap(global.gl.TEXTURE_2D);
-		// global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_MIN_FILTER, global.gl.LINEAR_MIPMAP_LINEAR);
-
-		this._textureLoaded = true;
-		this._ready = true;
-
-	}
-
-	textureLoaded() {
-
-		_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.enableProgram();
-
-		this._texture = _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.createTexture();
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.activeTexture(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE0 + this._hipsShaderIndex);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.pixelStorei(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.UNPACK_FLIP_Y_WEBGL, true);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bindTexture(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_2D, this._texture);
-
+		this.texturesArray = this.splitImage()
 		
-		// global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_MIN_FILTER, global.gl.LINEAR_MIPMAP_LINEAR);
+		this.allSkyTiles = new Array(768)
 
-		// from WW
-		// global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_WRAP_S, global.gl.CLAMP_TO_EDGE);
-		// global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_WRAP_T, global.gl.CLAMP_TO_EDGE);
-
-		// global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_MIN_FILTER, global.gl.LINEAR);
-		// global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_MAG_FILTER, global.gl.LINEAR);
-
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.uniform1i(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.shaderProgram.samplerUniform, this._hipsShaderIndex);
-
-		if (!_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.isTexture(this._texture)) {
-			console.log("error in texture");
+		for (let p=0; p<768; p++){
+			let tile = new _AllSkyTile_js__WEBPACK_IMPORTED_MODULE_4__["default"](p, 3, this._hips, this.texturesArray[p])
+			this.allSkyTiles[p] = tile
+			
 		}
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.activeTexture(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE0 + this._hipsShaderIndex);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bindTexture(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_2D, this._texture);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.texImage2D(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_2D, 0, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.RGBA, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.RGBA, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.UNSIGNED_BYTE, this._image);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.generateMipmap(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_2D);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.texParameteri(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_2D, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_MIN_FILTER, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.LINEAR_MIPMAP_LINEAR);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.texParameteri(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_2D, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_WRAP_S, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.CLAMP_TO_EDGE);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.texParameteri(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_2D, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_WRAP_T, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.CLAMP_TO_EDGE);
+		this._textureLoaded = true
+		this._ready = true
+
 	}
 
-
-	initModelBuffer() {		
-		let hpx = _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].getHealpix(this._order);
-		this._maxTiles = hpx.getNPix();
-
-		// const tgtHpxOrder = this._order + 1;
-		// const healpix = global.getHealpix(this._order)
-		// const orderjump = tgtHpxOrder - this._order;
-		// const tgtHealpix = global.getHealpix(tgtHpxOrder)
+	splitImage() {
+		let textures = []
 		
-		const orderjump = 1;	
-		const tgtHpxOrder = this._order + orderjump;
-		const healpix = _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].getHealpix(this._order)
-		const tgtHealpix = _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].getHealpix(tgtHpxOrder)
+		const imgW = this._image.width;
+		const imgH = this._image.height;
+		let c = createCanvas(imgW, imgH)
+		const ctx = c.getContext("2d")
+		// ctx.createImageData(c.width, c.height);
+		ctx.drawImage(this._image, 0, 0, imgW, imgH);
+		
+		const tileCountX = 27
+		const tileCountY = 29
+		
+		const tilePxSize = this._image.width / tileCountX
+		
+		let tileno=0
+		for (let row=0; row < tileCountY; row++) {
+			for (let col=0; col < tileCountX; col++) {
+				
+				// const imgData = ctx.getImageData(col * 64 , row * 64, 64, 64).data
+				// textures.push(new ImageData(imgData, 64, 64))
+				const imgData = ctx.getImageData(col * tilePxSize , row * tilePxSize, tilePxSize, tilePxSize).data
+				textures.push(new ImageData(imgData, tilePxSize, tilePxSize))
+				tileno++
+				if (tileno == 768) break
+			}
+		}
+		
+		// textures.forEach( t => {
+		// 	const ctx2 = c.getContext("2d")
+		// 	ctx2.putImageData(t, 0, 0);
+		// 	const image = new Image();
+		// 	image.src = c.toDataURL();
+		// 	// console.log(image.src)
+		// })
+
+
+		return textures
+	}
+
 	
-		this._numFacesXTile = 4 ** orderjump; // used in gl.draw
-		this._numFaces = this._numFacesXTile * this._maxTiles
-		this.vertexPosition = new Float32Array(20 * this._numFaces);
 
-		let sindex = 0;
-		let tindex = 0;
-		this.vidx = 0;
-		for (let t = 0; t < this._maxTiles; t++) {
-
-			// TODO check if it is visible? if not, skip it
-
-			const xyf = healpix.nest2xyf(t);
-			const dxmin = xyf.ix << orderjump;
-			const dxmax = (xyf.ix << orderjump) + (1 << orderjump);
-			const dymin = xyf.iy << orderjump;
-			const dymax = (xyf.iy << orderjump) + (1 << orderjump);
-			this.setupPositionAndTexture4Quadrant(sindex, tindex, dxmin, dxmin + (dxmax - dxmin) / 2, dymin, dymin + (dymax - dymin) / 2, tgtHealpix, xyf, 0, 0);
-			this.setupPositionAndTexture4Quadrant(sindex, tindex, dxmin + (dxmax - dxmin) / 2, dxmax, dymin, dymin + (dymax - dymin) / 2, tgtHealpix, xyf, 0, 1);
-			this.setupPositionAndTexture4Quadrant(sindex, tindex, dxmin, dxmin + (dxmax - dxmin) / 2, dymin + (dymax - dymin) / 2, dymax, tgtHealpix, xyf, 1, 0);
-			this.setupPositionAndTexture4Quadrant(sindex, tindex, dxmin + (dxmax - dxmin) / 2, dxmax, dymin + (dymax - dymin) / 2, dymax, tgtHealpix, xyf, 1, 1);
-			
-			// const dxmin = xyf.ix << (orderjump);
-			// const dxmax = (xyf.ix << (orderjump)) + (1 << (2*orderjump));
-			// const dymin = xyf.iy << (orderjump);
-			// const dymax = (xyf.iy << (orderjump)) + (1 << (2*orderjump));
-			// this.setupPositionAndTexture4Quadrant2(sindex, tindex, orderjump, tgtHealpix, xyf, 0, 0);
-			// this.setupPositionAndTexture4Quadrant2(sindex, tindex, orderjump, tgtHealpix, xyf, 0, 1);
-			// this.setupPositionAndTexture4Quadrant2(sindex, tindex, orderjump, tgtHealpix, xyf, 1, 0);
-			// this.setupPositionAndTexture4Quadrant2(sindex, tindex, orderjump, tgtHealpix, xyf, 1, 1);
-			
-
-			
-			sindex++;
-			if (sindex == 27 ) {
-				tindex++;
-				sindex = 0;
-			}
-
-		}
-
-		
-		let vertexIndices = new Uint16Array(6 * this._numFaces);
-		let baseFaceIndex = 0;
-		for (let i = 0; i < this._numFaces; i++) {
-			vertexIndices[6 * i] = baseFaceIndex;
-			vertexIndices[6 * i + 1] = baseFaceIndex + 1;
-			vertexIndices[6 * i + 2] = baseFaceIndex + 3;
-
-			vertexIndices[6 * i + 3] = baseFaceIndex + 1;
-			vertexIndices[6 * i + 4] = baseFaceIndex + 2;
-			vertexIndices[6 * i + 5] = baseFaceIndex + 3;
-
-			baseFaceIndex = baseFaceIndex + 4;
-		}
-
-		this.vertexPositionBuffer = _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.createBuffer();
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bindBuffer(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.ARRAY_BUFFER, this.vertexPositionBuffer);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bufferData(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.ARRAY_BUFFER, this.vertexPosition, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.STATIC_DRAW);
-
-		this.vertexIndexBuffer = _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.createBuffer();
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bindBuffer(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.ELEMENT_ARRAY_BUFFER, this.vertexIndexBuffer);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bufferData(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.ELEMENT_ARRAY_BUFFER, vertexIndices, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.STATIC_DRAW);
-	};
-
-
-	setupPositionAndTexture4Quadrant2(sindex, tindex, orderjump, tgthealpix, xyf, qx, qy) {
-
-		let facesVec3Array = new Array();
-		
-		// const factor = 2 ** (tgthealpix.order - 3)
-		const factor = 2 ** (orderjump)
-		
-		// 64x64 pixel into the AllSky image
-		const s_order3_step = 1 / 27
-		// const t_order3_step = 1 / 29 
-		const t_order3_step = s_order3_step
-
-		const s_image_step = s_order3_step / factor;
-		const t_image_step = t_order3_step / factor;
-		
-
-		// let s_pxXtile = 1728 / (27 * factor)
-		// const s_pixel_size = s_image_step / s_pxXtile
-		
-		// let t_pxXtile = 1856 / (29 * factor)
-		// const t_pixel_size = t_image_step / t_pxXtile
-
-		const base_image_s = s_order3_step * sindex + (2**(orderjump-1)) * s_image_step * qx
-		const base_image_t = 1 - t_order3_step * tindex + (2**(orderjump-1)) * t_image_step * qy
-
-		const points_in_quadrant_edge = 2**orderjump / 2
-		
-		for (let dx = 0; dx <= points_in_quadrant_edge; dx++) {
-			for (let dy = 0; dy <= points_in_quadrant_edge; dy++) {
-
-				facesVec3Array = tgthealpix.getPointsForXyfNoStep(dx, dy, xyf.face);
-				// let tileno = tgthealpix.xyf2nest(dx, dy, xyf.face)
-				// uindex = dy - (xyf.iy << orderjump);
-				// vindex = dx - (xyf.ix << orderjump);
-
-				// bottom left 
-				this.vertexPosition[20 * this.vidx] = facesVec3Array[0].x;
-				this.vertexPosition[20 * this.vidx + 1] = facesVec3Array[0].y;
-				this.vertexPosition[20 * this.vidx + 2] = facesVec3Array[0].z;
-				//bottom right
-				this.vertexPosition[20 * this.vidx + 3] = base_image_s + (s_image_step * dx) + s_image_step;
-				this.vertexPosition[20 * this.vidx + 4] = base_image_t + (t_image_step * dy) ;
-
-				// top left 
-				this.vertexPosition[20 * this.vidx + 5] = facesVec3Array[1].x;
-				this.vertexPosition[20 * this.vidx + 6] = facesVec3Array[1].y;
-				this.vertexPosition[20 * this.vidx + 7] = facesVec3Array[1].z;
-				//top right
-				// this.vertexPosition[20 * this.vidx + 8] = base_image_s + (s_image_step * dx) + s_image_step;
-				// this.vertexPosition[20 * this.vidx + 9] = base_image_t + (t_image_step * dy) + t_image_step;
-				this.vertexPosition[20 * this.vidx + 8] = base_image_s + (s_image_step * dx) + s_image_step;
-				this.vertexPosition[20 * this.vidx + 9] = base_image_t + (t_image_step * dy) + t_image_step;
-
-				// top right
-				this.vertexPosition[20 * this.vidx + 10] = facesVec3Array[2].x;
-				this.vertexPosition[20 * this.vidx + 11] = facesVec3Array[2].y;
-				this.vertexPosition[20 * this.vidx + 12] = facesVec3Array[2].z;
-				//top left
-				// this.vertexPosition[20 * this.vidx + 13] = base_image_s ;
-				// this.vertexPosition[20 * this.vidx + 14] = 1 - base_image_t;
-				this.vertexPosition[20 * this.vidx + 13] = base_image_s  + (s_image_step * dx);
-				this.vertexPosition[20 * this.vidx + 14] = base_image_t + (t_image_step * dy) + t_image_step;
-				
-				// bottom right
-				this.vertexPosition[20 * this.vidx + 15] = facesVec3Array[3].x;
-				this.vertexPosition[20 * this.vidx + 16] = facesVec3Array[3].y;
-				this.vertexPosition[20 * this.vidx + 17] = facesVec3Array[3].z;
-				//bottom left
-				// this.vertexPosition[20 * this.vidx + 18] = base_image_s;
-				// this.vertexPosition[20 * this.vidx + 19] = 1 - base_image_t - (t_image_step * dy) ;
-				this.vertexPosition[20 * this.vidx + 18] = base_image_s + (s_image_step * dx);
-				this.vertexPosition[20 * this.vidx + 19] = base_image_t + (t_image_step * dy);
-				
-				
-				this.vidx++;
-			}
-		}
-
-	}
-
-	setupPositionAndTexture4Quadrant(sindex, tindex, dxmin, dxmax, dymin, dymax, tgthealpix, xyf, qx, qy) {
-
-		let facesVec3Array = new Array();
-		
-		// const factor = 2 ** (tgthealpix.order - 3)
-		const factor = 2 * (tgthealpix.order - 3)
-		// const factor = this._numFacesXTile / 2
-		
-		// const uindex = sindex; 
-		// const vindex = tindex;
-		
-		// 64x64 pixel into the AllSky image
-
-		//0.037037037
-		const s_step = 1 / (27 * factor);
-		//0.034482759
-		const t_step = 1 / (29 * factor);
-		// const t_step = s_step;
-		
-
-		// let s_pxXtile = 1728 / (27 * factor)
-		// const s_pixel_size = s_step / s_pxXtile
-		const s_pixel_size = s_step / 64
-		// const epsilon_s = 0
-
-		
-		// let t_pxXtile = 1856 / (29 * factor)
-		// const t_pixel_size = t_step / t_pxXtile
-		const t_pixel_size = t_step / 64
-		// const epsilon_t = 0
-
-		const base_s = factor * s_step * sindex + s_step * qx
-		const base_t = factor * t_step * tindex + t_step * qy
-		for (let dx = dxmin; dx < dxmax; dx++) {
-			for (let dy = dymin; dy < dymax; dy++) {
-
-				facesVec3Array = tgthealpix.getPointsForXyfNoStep(dx, dy, xyf.face);
-				// let tileno = tgthealpix.xyf2nest(dx, dy, xyf.face)
-				// uindex = dy - (xyf.iy << orderjump);
-				// vindex = dx - (xyf.ix << orderjump);
-
-				//bottom right
-				this.vertexPosition[20 * this.vidx] = facesVec3Array[0].x;
-				this.vertexPosition[20 * this.vidx + 1] = facesVec3Array[0].y;
-				this.vertexPosition[20 * this.vidx + 2] = facesVec3Array[0].z;
-				this.vertexPosition[20 * this.vidx + 3] = s_step + base_s - s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t);
-				this.vertexPosition[20 * this.vidx + 4] = 1 - (t_step + base_t) + t_pixel_size;
-				
-				//top right
-				this.vertexPosition[20 * this.vidx + 5] = facesVec3Array[1].x;
-				this.vertexPosition[20 * this.vidx + 6] = facesVec3Array[1].y;
-				this.vertexPosition[20 * this.vidx + 7] = facesVec3Array[1].z;
-				this.vertexPosition[20 * this.vidx + 8] = s_step + base_s - s_pixel_size;
-				this.vertexPosition[20 * this.vidx + 9] = 1 - base_t - t_pixel_size;
-				
-				//top left
-				this.vertexPosition[20 * this.vidx + 10] = facesVec3Array[2].x;
-				this.vertexPosition[20 * this.vidx + 11] = facesVec3Array[2].y;
-				this.vertexPosition[20 * this.vidx + 12] = facesVec3Array[2].z;
-				// this.vertexPosition[20 * this.vidx + 13] = base_s;
-				this.vertexPosition[20 * this.vidx + 13] = base_s + s_pixel_size;
-				this.vertexPosition[20 * this.vidx + 14] = 1 - base_t - t_pixel_size;
-				
-				//bottom left
-				this.vertexPosition[20 * this.vidx + 15] = facesVec3Array[3].x;
-				this.vertexPosition[20 * this.vidx + 16] = facesVec3Array[3].y;
-				this.vertexPosition[20 * this.vidx + 17] = facesVec3Array[3].z;
-				// this.vertexPosition[20 * this.vidx + 18] = base_s + s_pixel_size;
-				this.vertexPosition[20 * this.vidx + 18] = base_s + s_pixel_size;
-				// this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t);
-				this.vertexPosition[20 * this.vidx + 19] = 1 - (t_step + base_t) + t_pixel_size;
-				
-				
-				this.vidx++;
-			}
-		}
-
-	}
 
 
 	draw(visibleOrder, visibleTilesMap, pMatrix, vMatrix, mMatrix, colorMapIdx) {
@@ -55037,42 +54813,31 @@ class AllSky {
 			return false;
 		}
 		let allSkyTiles2Skip = []
-		if (visibleOrder >= this._order) {
-			allSkyTiles2Skip = this.drawChildren(visibleOrder, visibleTilesMap, pMatrix, vMatrix, mMatrix, colorMapIdx);
-		}
-
-		_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.enableShaders(pMatrix, vMatrix, mMatrix, colorMapIdx);
-		// TODO check if the enable below can be moved into hipsShaderProgram.enableShaders
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.enableVertexAttribArray(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.vertexPositionAttribute);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.enableVertexAttribArray(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.textureCoordAttribute);
-
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.activeTexture(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE0 + this._hipsShaderIndex);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bindTexture(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TEXTURE_2D, this._texture);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.uniform1f(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.textureAlpha, this.opacity);
-
-
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bindBuffer(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.ARRAY_BUFFER, this.vertexPositionBuffer);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.bindBuffer(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.ELEMENT_ARRAY_BUFFER, this.vertexIndexBuffer);
-
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.vertexAttribPointer(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.vertexPositionAttribute, 3, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.FLOAT, false, 5 * 4, 0);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.vertexAttribPointer(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.textureCoordAttribute, 2, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.FLOAT, false, 5 * 4, 3 * 4);
-
-		for (let t = 0; t < this._maxTiles; t++) {
-			if (!allSkyTiles2Skip.includes(t)) {
-				// if (t == 0 || t == 1)
-				_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.drawElements(_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.TRIANGLES, 6 * this._numFacesXTile, _Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.UNSIGNED_SHORT, 12 * t * this._numFacesXTile);
+		if (visibleOrder >= this._hipsTextureOrder) {
+			allSkyTiles2Skip = this.drawChildren(visibleOrder, visibleTilesMap, pMatrix, vMatrix, mMatrix, colorMapIdx)
+		} 
+		// else {
+			_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.enableShaders(pMatrix, vMatrix, mMatrix, colorMapIdx);
+			// TODO check if the enable below can be moved into hipsShaderProgram.enableShaders
+			_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.enableVertexAttribArray(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.vertexPositionAttribute);
+			_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.enableVertexAttribArray(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.textureCoordAttribute);
+			for (let t = 0; t < 768; t++) {
+				if (!allSkyTiles2Skip.includes(t)) {
+					this.allSkyTiles[t].draw(visibleOrder, visibleTilesMap, pMatrix, vMatrix, mMatrix, colorMapIdx)
+				}
+					
 			}
-				
-		}
+			_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.disableVertexAttribArray(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.vertexPositionAttribute);
+        	_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.disableVertexAttribArray(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.textureCoordAttribute);
+		// }
 
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.disableVertexAttribArray(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.vertexPositionAttribute);
-		_Global_js__WEBPACK_IMPORTED_MODULE_1__["default"].gl.disableVertexAttribArray(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_0__.hipsShaderProgram.locations.textureCoordAttribute);
+		
 	}
 
 
 	drawChildren(visibleOrder, visibleTilesMap, pMatrix, vMatrix, mMatrix, colorMapIdx) {
 
-		let childrenOrder = this._order;
+		let childrenOrder = this._hipsTextureOrder;
 		if (!visibleTilesMap.has(childrenOrder)) {
 			return;
 		}
@@ -55097,6 +54862,321 @@ class AllSky {
 
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (AllSky);
+
+/***/ }),
+
+/***/ "./src/js/model/hipsnew/AllSkyTile.js":
+/*!********************************************!*\
+  !*** ./src/js/model/hipsnew/AllSkyTile.js ***!
+  \********************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var healpixjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! healpixjs */ "./node_modules/healpixjs/lib-esm/index.js");
+/* harmony import */ var wcslight__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! wcslight */ "./node_modules/wcslight/lib-esm/index.js");
+/* harmony import */ var _Global_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../Global.js */ "./src/js/Global.js");
+/* harmony import */ var _shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../shaders/HiPSShaderProgram.js */ "./src/js/shaders/HiPSShaderProgram.js");
+/* harmony import */ var _TileBuffer_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./TileBuffer.js */ "./src/js/model/hipsnew/TileBuffer.js");
+/* harmony import */ var _VisibleTilesManager_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VisibleTilesManager.js */ "./src/js/model/hipsnew/VisibleTilesManager.js");
+/* harmony import */ var _FoVHelper_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./FoVHelper.js */ "./src/js/model/hipsnew/FoVHelper.js");
+/* harmony import */ var _HPXGeometryCache_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./HPXGeometryCache.js */ "./src/js/model/hipsnew/HPXGeometryCache.js");
+
+
+
+
+
+
+
+
+
+
+class AllSkyTile {
+
+    _hips;
+    _tilebuffer;
+    _tileno;
+    _baseurl;
+    _order;
+
+    // constructor(tileno, descriptor, format, order, shaderprogram, tilebuffer, hips, samplerIdx) {
+    constructor(tileno, order, hips, image) {
+
+        this._ready = false;
+        this._abort = false;
+
+        this._hips = hips;
+        this._tileno = tileno;
+
+        this._format = hips.format;
+        this._baseurl = hips.baseURL;
+        this._maxorder = hips.maxOrder;
+        this._minorder = hips.minOrder;
+        this._isGalacticHips = hips.isGalacticHips;
+
+        this._order = order;
+
+        this.opacity = 1.00;
+
+        this._hipsShaderIndex = 0; // <== used for multi hips 
+        this._pixels = [];
+
+        this._texture = undefined;
+
+        this._cacheTime0 = undefined;
+
+        this._inView = true;
+
+        // setTimeout(() => {
+        //     this.amIStillInFoV()
+        // }, 1000);
+        // this._amIStillInFoV_requsetID = setInterval( () => { this.amIStillInFoV() }, 5000);
+
+        // this.initImage();
+        this._image = image
+        this.imageLoaded()
+    }
+
+    // destroyIntervals(){
+    //     clearInterval(this._amIStillInFoV_requsetID);
+    // }
+
+    get cacheTime0() {
+        return this._cacheTime0
+    }
+
+    resetCacheTime0(){
+        this._cacheTime0 = undefined
+    }
+
+    setCacheTime0(){
+        this._cacheTime0 = new Date().getTime()
+    }
+
+    // initImage() {
+
+    //     this._image = new Image();
+    //     this._downloading = true;
+    //     this._imageLoaded = false;
+
+    //     let dirnumber = Math.floor(this._tileno / 10000) * 10000;
+    //     this._texurl = this._baseurl + "/Norder";
+    //     this._texurl += this._order + "/Dir" + dirnumber + "/Npix" + this._tileno + "." + this._format;
+
+    //     this._image.onload = () => {
+    //         this.imageLoaded();
+
+    //     };
+    //     this._image.onerror = () => {
+    //         console.error("File not found? {}", this._texurl)
+    //         this._ready = false;
+    //         this._abort = true;
+    //     };
+
+    //     this._image.setAttribute('crossorigin', 'anonymous');
+    //     this._image.src = this._texurl;
+    //     // this.loadImage();
+
+    // }
+
+    imageLoaded() {
+        this._imageLoaded = true;
+        this._downloading = false;
+        
+        this.textureLoaded();
+        this.initModelBuffer();
+
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.activeTexture(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE0 + this._hipsShaderIndex);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bindTexture(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_2D, this._texture);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.texImage2D(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_2D, 0, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.RGBA, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.RGBA, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.UNSIGNED_BYTE, this._image);
+        // global.gl.generateMipmap(global.gl.TEXTURE_2D);
+        this._textureLoaded = true;
+
+        if (this._textureLoaded) {
+            this._ready = true;
+        }
+
+    }
+
+
+
+    textureLoaded() {
+
+        _shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_3__.hipsShaderProgram.enableProgram();
+
+        this._texture = _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.createTexture();
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.activeTexture(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE0 + this._hipsShaderIndex);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.pixelStorei(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.UNPACK_FLIP_Y_WEBGL, true);
+        // global.gl.pixelStorei(global.gl.UNPACK_FLIP_Y_WEBGL, false);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bindTexture(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_2D, this._texture);
+
+        // from WW
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.texParameteri(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_2D, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_WRAP_S, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.CLAMP_TO_EDGE);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.texParameteri(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_2D, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_WRAP_T, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.CLAMP_TO_EDGE);
+        // global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_WRAP_S, global.gl.CLAMP_TO_BORDER);
+        // global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_WRAP_T, global.gl.CLAMP_TO_BORDER);
+        // global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_WRAP_S, global.gl.CLAMP);
+        // global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_WRAP_T, global.gl.CLAMP);
+
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.texParameteri(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_2D, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_MIN_FILTER, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.LINEAR);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.texParameteri(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_2D, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_MAG_FILTER, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.LINEAR);
+        // global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_MIN_FILTER, global.gl.GL_LINEAR_MIPMAP_LINEAR);
+        // global.gl.texParameteri(global.gl.TEXTURE_2D, global.gl.TEXTURE_MAG_FILTER, global.gl.GL_LINEAR);
+
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.uniform1i(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_3__.hipsShaderProgram.shaderProgram.samplerUniform, this._hipsShaderIndex);
+
+        if (!_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.isTexture(this._texture)) {
+            console.log("error in texture");
+        }
+
+    }
+
+    initModelBuffer() {
+
+        this.vertexPosition = [];
+        this.vertexPositionBuffer = [];
+        this.vertexIndices = [];
+        this.vertexIndexBuffer = [];
+
+        const reforder = 4;
+
+        const orighealpix = _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].getHealpix(this._order)
+        const origxyf = orighealpix.nest2xyf(this._tileno);
+
+        const orderjump = reforder - this._order;
+
+        const dxmin = origxyf.ix << orderjump;
+        const dxmax = (origxyf.ix << orderjump) + (1 << orderjump);
+        const dymin = origxyf.iy << orderjump;
+        const dymax = (origxyf.iy << orderjump) + (1 << orderjump);
+
+        const healpix = _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].getHealpix(reforder)
+
+        this._pixels = [];
+        this.setupPositionAndTexture4Quadrant2(dxmin, dxmin + (dxmax - dxmin) / 2, dymin, dymin + (dymax - dymin) / 2, 0, healpix, orderjump, origxyf);
+        this.setupPositionAndTexture4Quadrant2(dxmin + (dxmax - dxmin) / 2, dxmax, dymin, dymin + (dymax - dymin) / 2, 1, healpix, orderjump, origxyf);
+        this.setupPositionAndTexture4Quadrant2(dxmin, dxmin + (dxmax - dxmin) / 2, dymin + (dymax - dymin) / 2, dymax, 2, healpix, orderjump, origxyf);
+        this.setupPositionAndTexture4Quadrant2(dxmin + (dxmax - dxmin) / 2, dxmax, dymin + (dymax - dymin) / 2, dymax, 3, healpix, orderjump, origxyf);
+
+        let pixelsXQuadrant = this.vertexPosition[0].length / 20;
+        this.vertexIndices = this.computeVertexIndices(pixelsXQuadrant);
+        this.vertexIndexBuffer = _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.createBuffer();
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bindBuffer(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.ELEMENT_ARRAY_BUFFER, this.vertexIndexBuffer);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bufferData(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.ELEMENT_ARRAY_BUFFER, this.vertexIndices, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.STATIC_DRAW);
+
+    }
+
+    computeVertexIndices(pixelsXQuadrant) {
+        let vertexIndices = new Uint16Array(6 * pixelsXQuadrant);
+        let baseFaceIndex = 0;
+        for (let j = 0; j < pixelsXQuadrant; j++) {
+
+            vertexIndices[6 * j] = baseFaceIndex;
+            vertexIndices[6 * j + 1] = baseFaceIndex + 1;
+            vertexIndices[6 * j + 2] = baseFaceIndex + 2;
+
+            vertexIndices[6 * j + 3] = baseFaceIndex + 2;
+            vertexIndices[6 * j + 4] = baseFaceIndex + 3;
+            vertexIndices[6 * j + 5] = baseFaceIndex;
+
+            baseFaceIndex = baseFaceIndex + 4;
+
+        }
+        return vertexIndices;
+    }
+
+    setupPositionAndTexture4Quadrant2(dxmin, dxmax, dymin, dymax, qidx, healpix, orderjump, origxyf) {
+
+        let facesVec3Array = new Array();
+        this.vertexPosition[qidx] = new Float32Array(20 * (dxmax - dxmin) * (dymax - dymin));
+
+        let step = 1 / (1 << orderjump);
+        let uindex = 0;
+        let vindex = 0;
+        let p = 0;
+
+        for (let dx = dxmin; dx < dxmax; dx++) {
+            for (let dy = dymin; dy < dymax; dy++) {
+                
+                facesVec3Array = healpix.getPointsForXyfNoStep(dx, dy, origxyf.face);
+                uindex = dy - (origxyf.iy << orderjump);
+                vindex = dx - (origxyf.ix << orderjump);
+
+                this.vertexPosition[qidx][20 * p] = facesVec3Array[0].x;
+                this.vertexPosition[qidx][20 * p + 1] = facesVec3Array[0].y;
+                this.vertexPosition[qidx][20 * p + 2] = facesVec3Array[0].z;
+                this.vertexPosition[qidx][20 * p + 3] = step + (step * uindex);
+                this.vertexPosition[qidx][20 * p + 4] = 1 - (step + step * vindex);
+
+                this.vertexPosition[qidx][20 * p + 5] = facesVec3Array[1].x;
+                this.vertexPosition[qidx][20 * p + 6] = facesVec3Array[1].y;
+                this.vertexPosition[qidx][20 * p + 7] = facesVec3Array[1].z;
+                this.vertexPosition[qidx][20 * p + 8] = step + (step * uindex);
+                this.vertexPosition[qidx][20 * p + 9] = 1 - (step * vindex);
+
+                this.vertexPosition[qidx][20 * p + 10] = facesVec3Array[2].x;
+                this.vertexPosition[qidx][20 * p + 11] = facesVec3Array[2].y;
+                this.vertexPosition[qidx][20 * p + 12] = facesVec3Array[2].z;
+                this.vertexPosition[qidx][20 * p + 13] = step * uindex;
+                this.vertexPosition[qidx][20 * p + 14] = 1 - (step * vindex);
+
+                this.vertexPosition[qidx][20 * p + 15] = facesVec3Array[3].x;
+                this.vertexPosition[qidx][20 * p + 16] = facesVec3Array[3].y;
+                this.vertexPosition[qidx][20 * p + 17] = facesVec3Array[3].z;
+                this.vertexPosition[qidx][20 * p + 18] = step * uindex;
+                this.vertexPosition[qidx][20 * p + 19] = 1 - (step + step * vindex);
+                p++;
+            }
+        }
+
+        this.vertexPositionBuffer[qidx] = _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.createBuffer();
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bindBuffer(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.ARRAY_BUFFER, this.vertexPositionBuffer[qidx]);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bufferData(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.ARRAY_BUFFER, this.vertexPosition[qidx], _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.STATIC_DRAW);
+
+    }
+
+
+    get inView(){
+        return this._inView;
+    }
+    
+
+    draw(visibleOrder, visibleTilesMap, pMatrix, vMatrix, mMatrix, colorMapIdx) {
+
+        if (!this._ready || this._abort) {
+            return;
+        }
+
+        let quadrantsToDraw = new Set([0, 1, 2, 3]);
+        
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.activeTexture(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE0 + this._hipsShaderIndex);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bindTexture(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TEXTURE_2D, this._texture);
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.uniform1f(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_3__.hipsShaderProgram.locations.textureAlpha, this.opacity);
+
+        _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bindBuffer(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.ELEMENT_ARRAY_BUFFER, this.vertexIndexBuffer);
+        let elemno = this.vertexIndices.length;
+
+        quadrantsToDraw.forEach((qidx) => {
+            _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.bindBuffer(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.ARRAY_BUFFER, this.vertexPositionBuffer[qidx]);
+
+            _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.vertexAttribPointer(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_3__.hipsShaderProgram.locations.vertexPositionAttribute, 3, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.FLOAT, false, 5 * 4, 0);
+            _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.vertexAttribPointer(_shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_3__.hipsShaderProgram.locations.textureCoordAttribute, 2, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.FLOAT, false, 5 * 4, 3 * 4);
+
+            _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.drawElements(_Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.TRIANGLES, elemno, _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].gl.UNSIGNED_SHORT, 0);
+        });
+
+        
+    }
+
+
+
+
+}
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (AllSkyTile);
 
 /***/ }),
 
@@ -55595,23 +55675,23 @@ class FoVHelper {
 
         let order = 3;
 
+        // if (fov >= 179) {
+        //     order = 0;
+        // } else if (fov >= 90) {
+        //     order = 1;
+        // } else if (fov >= 30) {
+        //     order = 2;
+        // } else if (fov >= 12.5) {
+        //     order = 3;
         if (fov >= 179) {
             order = 0;
         } else if (fov >= 90) {
             order = 1;
         } else if (fov >= 30) {
             order = 2;
-        } else if (fov >= 12.5) {
+        } else if (fov >= 20) {
             order = 3;
 
-        // if (fov >= 179) {
-        //     order = 0;
-        // } else if (fov >= 90) {
-        //     order = 1;
-        // } else if (fov >= 40) {
-        //     order = 2;
-        // } else if (fov >= 12.5) {
-        //     order = 3;
         } else if (fov >= 6) {
             order = 4;
         } else if (fov >= 3.2) {
@@ -55825,7 +55905,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shaders_HiPSShaderProgram_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../../shaders/HiPSShaderProgram.js */ "./src/js/shaders/HiPSShaderProgram.js");
 /* harmony import */ var _AncestorTile_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./AncestorTile.js */ "./src/js/model/hipsnew/AncestorTile.js");
 /* harmony import */ var _VisibleTilesManager_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./VisibleTilesManager.js */ "./src/js/model/hipsnew/VisibleTilesManager.js");
-/* harmony import */ var _AllSky3_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./AllSky3.js */ "./src/js/model/hipsnew/AllSky3.js");
+/* harmony import */ var _AllSky7_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./AllSky7.js */ "./src/js/model/hipsnew/AllSky7.js");
 
 /**
  * @author Fabrizio Giordano (Fab77)
@@ -55845,9 +55925,12 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
+// import AllSky from './AllSky3.js';
 // import AllSky from './AllSky3-pseudo.js';
 // import AllSky from './AllSky4.js';
+// import AllSky from './AllSky5.js';
+// import AllSky from './AllSky6.js';
+
 
 /**
  * HiPS always has pixels geometry in Norder3 ( => 768 tiles). 
@@ -55912,7 +55995,7 @@ class HiPS extends _AbstractSkyEntity_js__WEBPACK_IMPORTED_MODULE_0__["default"]
 		// TODO check if Allsky HiPS.
 		this._allSky = true
 		if (this._allSky) {
-			this._allSkyTile = new _AllSky3_js__WEBPACK_IMPORTED_MODULE_8__["default"](this)
+			this._allSkyTile = new _AllSky7_js__WEBPACK_IMPORTED_MODULE_8__["default"](this)
 		} else {
 			for (let t = 0; t < 12; t++) {
 				this._ancestorTiles.push(new _AncestorTile_js__WEBPACK_IMPORTED_MODULE_6__["default"](t, 0, this));
@@ -56246,13 +56329,13 @@ class Tile {
         this.vertexIndices = [];
         this.vertexIndexBuffer = [];
 
-        this._reforder = _FoVHelper_js__WEBPACK_IMPORTED_MODULE_6__.fovHelper.getRefOrder(this._order);
+        const reforder = _FoVHelper_js__WEBPACK_IMPORTED_MODULE_6__.fovHelper.getRefOrder(this._order);
 
         const orighealpix = _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].getHealpix(this._order)
         // let orighealpix = new Healpix(2 ** this._order);
         const origxyf = orighealpix.nest2xyf(this._tileno);
 
-        const orderjump = this._reforder - this._order;
+        const orderjump = reforder - this._order;
 
         // let dxmin = origxyf.ix * Math.pow(2, orderjump);
         // let dxmax = (origxyf.ix * Math.pow(2, orderjump)) + Math.pow(2, orderjump);
@@ -56264,7 +56347,7 @@ class Tile {
         const dymin = origxyf.iy << orderjump;
         const dymax = (origxyf.iy << orderjump) + (1 << orderjump);
 
-        const healpix = _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].getHealpix(this._reforder)
+        const healpix = _Global_js__WEBPACK_IMPORTED_MODULE_2__["default"].getHealpix(reforder)
         // let healpix = new Healpix(2 ** reforder);
 
         this._pixels = [];
@@ -56316,58 +56399,49 @@ class Tile {
         let facesVec3Array = new Array();
         this.vertexPosition[qidx] = new Float32Array(20 * (dxmax - dxmin) * (dymax - dymin));
 
+        // const imgW = this._image.width
+        // const pxSizeST = 1 / imgW
+        // const pxXSubTile = imgW / (2 ** orderjump)
+        // const step = pxXSubTile * pxSizeST
+
         let step = 1 / (1 << orderjump);
         let uindex = 0;
         let vindex = 0;
         let p = 0;
 
+        const s_pixel_size = 0
+        const t_pixel_size = 0
+
         for (let dx = dxmin; dx < dxmax; dx++) {
             for (let dy = dymin; dy < dymax; dy++) {
-
-                // let ipix3 = healpix.xyf2nest(dx, dy, origxyf.face);
-                // this._pixels.push(ipix3);
-                // facesVec3Array = healpix.getBoundaries(ipix3) 
-                
-                // testing
-                // let xyf = new Xyf(dx, dy, origxyf.face)
-                // let facesVec3Array = hpxGeometryCache.getGeometry(this._reforder, xyf)
-                // if (facesVec3Array == null){
-                    // facesVec3Array = healpix.getPointsForXyfNoStep(dx, dy, origxyf.face);
-                // }
-                
+        
                 facesVec3Array = healpix.getPointsForXyfNoStep(dx, dy, origxyf.face);
-                // let xyf = healpix.nest2xyf(ipix3);
-                // uindex = xyf.iy - origxyf.iy * Math.pow(2, orderjump);
-                // vindex = xyf.ix - origxyf.ix * Math.pow(2, orderjump);
                 uindex = dy - (origxyf.iy << orderjump);
                 vindex = dx - (origxyf.ix << orderjump);
-
-                // uindex = xyf.iy - (origxyf.iy << orderjump);
-                // vindex = xyf.ix - (origxyf.ix << orderjump);
 
                 this.vertexPosition[qidx][20 * p] = facesVec3Array[0].x;
                 this.vertexPosition[qidx][20 * p + 1] = facesVec3Array[0].y;
                 this.vertexPosition[qidx][20 * p + 2] = facesVec3Array[0].z;
-                this.vertexPosition[qidx][20 * p + 3] = step + (step * uindex);
-                this.vertexPosition[qidx][20 * p + 4] = 1 - (step + step * vindex);
+                this.vertexPosition[qidx][20 * p + 3] = step + (step * uindex) + s_pixel_size
+                this.vertexPosition[qidx][20 * p + 4] = 1 - (step + step * vindex) - t_pixel_size 
 
                 this.vertexPosition[qidx][20 * p + 5] = facesVec3Array[1].x;
                 this.vertexPosition[qidx][20 * p + 6] = facesVec3Array[1].y;
                 this.vertexPosition[qidx][20 * p + 7] = facesVec3Array[1].z;
-                this.vertexPosition[qidx][20 * p + 8] = step + (step * uindex);
-                this.vertexPosition[qidx][20 * p + 9] = 1 - (step * vindex);
+                this.vertexPosition[qidx][20 * p + 8] = step + (step * uindex) + s_pixel_size
+                this.vertexPosition[qidx][20 * p + 9] = 1 - (step * vindex) + t_pixel_size 
 
                 this.vertexPosition[qidx][20 * p + 10] = facesVec3Array[2].x;
                 this.vertexPosition[qidx][20 * p + 11] = facesVec3Array[2].y;
                 this.vertexPosition[qidx][20 * p + 12] = facesVec3Array[2].z;
-                this.vertexPosition[qidx][20 * p + 13] = step * uindex;
-                this.vertexPosition[qidx][20 * p + 14] = 1 - (step * vindex);
+                this.vertexPosition[qidx][20 * p + 13] = step * uindex - s_pixel_size
+                this.vertexPosition[qidx][20 * p + 14] = 1 - (step * vindex) + t_pixel_size 
 
                 this.vertexPosition[qidx][20 * p + 15] = facesVec3Array[3].x;
                 this.vertexPosition[qidx][20 * p + 16] = facesVec3Array[3].y;
                 this.vertexPosition[qidx][20 * p + 17] = facesVec3Array[3].z;
-                this.vertexPosition[qidx][20 * p + 18] = step * uindex;
-                this.vertexPosition[qidx][20 * p + 19] = 1 - (step + step * vindex);
+                this.vertexPosition[qidx][20 * p + 18] = step * uindex - s_pixel_size
+                this.vertexPosition[qidx][20 * p + 19] = 1 - (step + step * vindex) - t_pixel_size 
                 p++;
             }
         }

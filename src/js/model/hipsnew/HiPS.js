@@ -17,9 +17,12 @@ import ColorMaps from '../../modules/dataexplorer/model/ColorMaps.js';
 import { hipsShaderProgram } from '../../shaders/HiPSShaderProgram.js';
 import AncestorTile from "./AncestorTile.js";
 import { newVisibleTilesManager } from './VisibleTilesManager.js';
-import AllSky from './AllSky3.js';
+// import AllSky from './AllSky3.js';
 // import AllSky from './AllSky3-pseudo.js';
 // import AllSky from './AllSky4.js';
+// import AllSky from './AllSky5.js';
+// import AllSky from './AllSky6.js';
+import AllSky from './AllSky7.js';
 
 /**
  * HiPS always has pixels geometry in Norder3 ( => 768 tiles). 
