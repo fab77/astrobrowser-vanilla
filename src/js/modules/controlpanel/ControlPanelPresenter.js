@@ -191,7 +191,7 @@ class ControlPanelPresenter{
 	}
 
 	registerForEvents(){
-		eventBus.registerForEvent(this, OpenPanelEvent.name);
+		// eventBus.registerForEvent(this, OpenPanelEvent.name);
 		
 		eventBus.registerForEvent(this, CatalogueSettingsEvent.name);
 		eventBus.registerForEvent(this, CloseCatalogueSettingsEvent.name);

@@ -11,719 +11,6 @@
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./node_modules/blob-polyfill/Blob.js":
-/*!********************************************!*\
-  !*** ./node_modules/blob-polyfill/Blob.js ***!
-  \********************************************/
-/***/ (function(module, exports, __webpack_require__) {
-
-var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* Blob.js
- * A Blob, File, FileReader & URL implementation.
- * 2020-02-01
- *
- * By Eli Grey, https://eligrey.com
- * By Jimmy Wärting, https://github.com/jimmywarting
- * License: MIT
- *   See https://github.com/eligrey/Blob.js/blob/master/LICENSE.md
- */
-
-(function(global) {
-	(function (factory) {
-		if (true) {
-			// AMD. Register as an anonymous module.
-			!(__WEBPACK_AMD_DEFINE_ARRAY__ = [exports], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
-		__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
-		(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
-		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-		} else {}
-	})(function (exports) {
-		"use strict";
-
-		var BlobBuilder = global.BlobBuilder
-			|| global.WebKitBlobBuilder
-			|| global.MSBlobBuilder
-			|| global.MozBlobBuilder;
-
-		var URL = global.URL || global.webkitURL || function (href, a) {
-			a = document.createElement("a");
-			a.href = href;
-			return a;
-		};
-
-		var origBlob = global.Blob;
-		var createObjectURL = URL.createObjectURL;
-		var revokeObjectURL = URL.revokeObjectURL;
-		var strTag = global.Symbol && global.Symbol.toStringTag;
-		var blobSupported = false;
-		var blobSupportsArrayBufferView = false;
-		var blobBuilderSupported = BlobBuilder
-			&& BlobBuilder.prototype.append
-			&& BlobBuilder.prototype.getBlob;
-
-		try {
-			// Check if Blob constructor is supported
-			blobSupported = new Blob(["ä"]).size === 2;
-
-			// Check if Blob constructor supports ArrayBufferViews
-			// Fails in Safari 6, so we need to map to ArrayBuffers there.
-			blobSupportsArrayBufferView = new Blob([new Uint8Array([1, 2])]).size === 2;
-		} catch (e) {/**/}
-
-
-		// Helper function that maps ArrayBufferViews to ArrayBuffers
-		// Used by BlobBuilder constructor and old browsers that didn't
-		// support it in the Blob constructor.
-		function mapArrayBufferViews (ary) {
-			return ary.map(function (chunk) {
-				if (chunk.buffer instanceof ArrayBuffer) {
-					var buf = chunk.buffer;
-
-					// if this is a subarray, make a copy so we only
-					// include the subarray region from the underlying buffer
-					if (chunk.byteLength !== buf.byteLength) {
-						var copy = new Uint8Array(chunk.byteLength);
-						copy.set(new Uint8Array(buf, chunk.byteOffset, chunk.byteLength));
-						buf = copy.buffer;
-					}
-
-					return buf;
-				}
-
-				return chunk;
-			});
-		}
-
-		function BlobBuilderConstructor (ary, options) {
-			options = options || {};
-
-			var bb = new BlobBuilder();
-			mapArrayBufferViews(ary).forEach(function (part) {
-				bb.append(part);
-			});
-
-			return options.type ? bb.getBlob(options.type) : bb.getBlob();
-		}
-
-		function BlobConstructor (ary, options) {
-			return new origBlob(mapArrayBufferViews(ary), options || {});
-		}
-
-		if (global.Blob) {
-			BlobBuilderConstructor.prototype = Blob.prototype;
-			BlobConstructor.prototype = Blob.prototype;
-		}
-
-		/********************************************************/
-		/*               String Encoder fallback                */
-		/********************************************************/
-		function stringEncode (string) {
-			var pos = 0;
-			var len = string.length;
-			var Arr = global.Uint8Array || Array; // Use byte array when possible
-
-			var at = 0; // output position
-			var tlen = Math.max(32, len + (len >> 1) + 7); // 1.5x size
-			var target = new Arr((tlen >> 3) << 3); // ... but at 8 byte offset
-
-			while (pos < len) {
-				var value = string.charCodeAt(pos++);
-				if (value >= 0xd800 && value <= 0xdbff) {
-					// high surrogate
-					if (pos < len) {
-						var extra = string.charCodeAt(pos);
-						if ((extra & 0xfc00) === 0xdc00) {
-							++pos;
-							value = ((value & 0x3ff) << 10) + (extra & 0x3ff) + 0x10000;
-						}
-					}
-					if (value >= 0xd800 && value <= 0xdbff) {
-						continue; // drop lone surrogate
-					}
-				}
-
-				// expand the buffer if we couldn't write 4 bytes
-				if (at + 4 > target.length) {
-					tlen += 8; // minimum extra
-					tlen *= (1.0 + (pos / string.length) * 2); // take 2x the remaining
-					tlen = (tlen >> 3) << 3; // 8 byte offset
-
-					var update = new Uint8Array(tlen);
-					update.set(target);
-					target = update;
-				}
-
-				if ((value & 0xffffff80) === 0) { // 1-byte
-					target[at++] = value; // ASCII
-					continue;
-				} else if ((value & 0xfffff800) === 0) { // 2-byte
-					target[at++] = ((value >> 6) & 0x1f) | 0xc0;
-				} else if ((value & 0xffff0000) === 0) { // 3-byte
-					target[at++] = ((value >> 12) & 0x0f) | 0xe0;
-					target[at++] = ((value >> 6) & 0x3f) | 0x80;
-				} else if ((value & 0xffe00000) === 0) { // 4-byte
-					target[at++] = ((value >> 18) & 0x07) | 0xf0;
-					target[at++] = ((value >> 12) & 0x3f) | 0x80;
-					target[at++] = ((value >> 6) & 0x3f) | 0x80;
-				} else {
-					// FIXME: do we care
-					continue;
-				}
-
-				target[at++] = (value & 0x3f) | 0x80;
-			}
-
-			return target.slice(0, at);
-		}
-
-		/********************************************************/
-		/*               String Decoder fallback                */
-		/********************************************************/
-		function stringDecode (buf) {
-			var end = buf.length;
-			var res = [];
-
-			var i = 0;
-			while (i < end) {
-				var firstByte = buf[i];
-				var codePoint = null;
-				var bytesPerSequence = (firstByte > 0xEF) ? 4
-					: (firstByte > 0xDF) ? 3
-						: (firstByte > 0xBF) ? 2
-							: 1;
-
-				if (i + bytesPerSequence <= end) {
-					var secondByte, thirdByte, fourthByte, tempCodePoint;
-
-					switch (bytesPerSequence) {
-					case 1:
-						if (firstByte < 0x80) {
-							codePoint = firstByte;
-						}
-						break;
-					case 2:
-						secondByte = buf[i + 1];
-						if ((secondByte & 0xC0) === 0x80) {
-							tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F);
-							if (tempCodePoint > 0x7F) {
-								codePoint = tempCodePoint;
-							}
-						}
-						break;
-					case 3:
-						secondByte = buf[i + 1];
-						thirdByte = buf[i + 2];
-						if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
-							tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F);
-							if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
-								codePoint = tempCodePoint;
-							}
-						}
-						break;
-					case 4:
-						secondByte = buf[i + 1];
-						thirdByte = buf[i + 2];
-						fourthByte = buf[i + 3];
-						if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
-							tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F);
-							if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
-								codePoint = tempCodePoint;
-							}
-						}
-					}
-				}
-
-				if (codePoint === null) {
-					// we did not generate a valid codePoint so insert a
-					// replacement char (U+FFFD) and advance only 1 byte
-					codePoint = 0xFFFD;
-					bytesPerSequence = 1;
-				} else if (codePoint > 0xFFFF) {
-					// encode to utf16 (surrogate pair dance)
-					codePoint -= 0x10000;
-					res.push(codePoint >>> 10 & 0x3FF | 0xD800);
-					codePoint = 0xDC00 | codePoint & 0x3FF;
-				}
-
-				res.push(codePoint);
-				i += bytesPerSequence;
-			}
-
-			var len = res.length;
-			var str = "";
-			var j = 0;
-
-			while (j < len) {
-				str += String.fromCharCode.apply(String, res.slice(j, j += 0x1000));
-			}
-
-			return str;
-		}
-
-		// string -> buffer
-		var textEncode = typeof TextEncoder === "function"
-			? TextEncoder.prototype.encode.bind(new TextEncoder())
-			: stringEncode;
-
-		// buffer -> string
-		var textDecode = typeof TextDecoder === "function"
-			? TextDecoder.prototype.decode.bind(new TextDecoder())
-			: stringDecode;
-
-		function FakeBlobBuilder () {
-			function bufferClone (buf) {
-				var view = new Array(buf.byteLength);
-				var array = new Uint8Array(buf);
-				var i = view.length;
-				while (i--) {
-					view[i] = array[i];
-				}
-				return view;
-			}
-			function array2base64 (input) {
-				var byteToCharMap = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-
-				var output = [];
-
-				for (var i = 0; i < input.length; i += 3) {
-					var byte1 = input[i];
-					var haveByte2 = i + 1 < input.length;
-					var byte2 = haveByte2 ? input[i + 1] : 0;
-					var haveByte3 = i + 2 < input.length;
-					var byte3 = haveByte3 ? input[i + 2] : 0;
-
-					var outByte1 = byte1 >> 2;
-					var outByte2 = ((byte1 & 0x03) << 4) | (byte2 >> 4);
-					var outByte3 = ((byte2 & 0x0F) << 2) | (byte3 >> 6);
-					var outByte4 = byte3 & 0x3F;
-
-					if (!haveByte3) {
-						outByte4 = 64;
-
-						if (!haveByte2) {
-							outByte3 = 64;
-						}
-					}
-
-					output.push(
-						byteToCharMap[outByte1], byteToCharMap[outByte2],
-						byteToCharMap[outByte3], byteToCharMap[outByte4]
-					);
-				}
-
-				return output.join("");
-			}
-
-			var create = Object.create || function (a) {
-				function c () {}
-				c.prototype = a;
-				return new c();
-			};
-
-			function getObjectTypeName (o) {
-				return Object.prototype.toString.call(o).slice(8, -1);
-			}
-
-			function isPrototypeOf(c, o) {
-				return typeof c === "object" && Object.prototype.isPrototypeOf.call(c.prototype, o);
-			}
-
-			function isDataView (o) {
-				return getObjectTypeName(o) === "DataView" || isPrototypeOf(global.DataView, o);
-			}
-
-			var arrayBufferClassNames = [
-				"Int8Array",
-				"Uint8Array",
-				"Uint8ClampedArray",
-				"Int16Array",
-				"Uint16Array",
-				"Int32Array",
-				"Uint32Array",
-				"Float32Array",
-				"Float64Array",
-				"ArrayBuffer"
-			];
-
-			function includes(a, v) {
-				return a.indexOf(v) !== -1;
-			}
-
-			function isArrayBuffer(o) {
-				return includes(arrayBufferClassNames, getObjectTypeName(o)) || isPrototypeOf(global.ArrayBuffer, o);
-			}
-
-			function concatTypedarrays (chunks) {
-				var size = 0;
-				var j = chunks.length;
-				while (j--) { size += chunks[j].length; }
-				var b = new Uint8Array(size);
-				var offset = 0;
-				for (var i = 0; i < chunks.length; i++) {
-					var chunk = chunks[i];
-					b.set(chunk, offset);
-					offset += chunk.byteLength || chunk.length;
-				}
-
-				return b;
-			}
-
-			/********************************************************/
-			/*                   Blob constructor                   */
-			/********************************************************/
-			function Blob (chunks, opts) {
-				chunks = chunks ? chunks.slice() : [];
-				opts = opts == null ? {} : opts;
-				for (var i = 0, len = chunks.length; i < len; i++) {
-					var chunk = chunks[i];
-					if (chunk instanceof Blob) {
-						chunks[i] = chunk._buffer;
-					} else if (typeof chunk === "string") {
-						chunks[i] = textEncode(chunk);
-					} else if (isDataView(chunk)) {
-						chunks[i] = bufferClone(chunk.buffer);
-					} else if (isArrayBuffer(chunk)) {
-						chunks[i] = bufferClone(chunk);
-					} else {
-						chunks[i] = textEncode(String(chunk));
-					}
-				}
-
-				this._buffer = global.Uint8Array
-					? concatTypedarrays(chunks)
-					: [].concat.apply([], chunks);
-				this.size = this._buffer.length;
-
-				this.type = opts.type || "";
-				if (/[^\u0020-\u007E]/.test(this.type)) {
-					this.type = "";
-				} else {
-					this.type = this.type.toLowerCase();
-				}
-			}
-
-			Blob.prototype.arrayBuffer = function () {
-				return Promise.resolve(this._buffer.buffer || this._buffer);
-			};
-
-			Blob.prototype.text = function () {
-				return Promise.resolve(textDecode(this._buffer));
-			};
-
-			Blob.prototype.slice = function (start, end, type) {
-				var slice = this._buffer.slice(start || 0, end || this._buffer.length);
-				return new Blob([slice], {type: type});
-			};
-
-			Blob.prototype.toString = function () {
-				return "[object Blob]";
-			};
-
-			/********************************************************/
-			/*                   File constructor                   */
-			/********************************************************/
-			function File (chunks, name, opts) {
-				opts = opts || {};
-				var a = Blob.call(this, chunks, opts) || this;
-				a.name = name.replace(/\//g, ":");
-				a.lastModifiedDate = opts.lastModified ? new Date(opts.lastModified) : new Date();
-				a.lastModified = +a.lastModifiedDate;
-
-				return a;
-			}
-
-			File.prototype = create(Blob.prototype);
-			File.prototype.constructor = File;
-
-			if (Object.setPrototypeOf) {
-				Object.setPrototypeOf(File, Blob);
-			} else {
-				try {
-					File.__proto__ = Blob;
-				} catch (e) {/**/}
-			}
-
-			File.prototype.toString = function () {
-				return "[object File]";
-			};
-
-			/********************************************************/
-			/*                FileReader constructor                */
-			/********************************************************/
-			function FileReader () {
-				if (!(this instanceof FileReader)) {
-					throw new TypeError("Failed to construct 'FileReader': Please use the 'new' operator, this DOM object constructor cannot be called as a function.");
-				}
-
-				var delegate = document.createDocumentFragment();
-				this.addEventListener = delegate.addEventListener;
-				this.dispatchEvent = function (evt) {
-					var local = this["on" + evt.type];
-					if (typeof local === "function") local(evt);
-					delegate.dispatchEvent(evt);
-				};
-				this.removeEventListener = delegate.removeEventListener;
-			}
-
-			function _read (fr, blob, kind) {
-				if (!(blob instanceof Blob)) {
-					throw new TypeError("Failed to execute '" + kind + "' on 'FileReader': parameter 1 is not of type 'Blob'.");
-				}
-
-				fr.result = "";
-
-				setTimeout(function () {
-					this.readyState = FileReader.LOADING;
-					fr.dispatchEvent(new Event("load"));
-					fr.dispatchEvent(new Event("loadend"));
-				});
-			}
-
-			FileReader.EMPTY = 0;
-			FileReader.LOADING = 1;
-			FileReader.DONE = 2;
-			FileReader.prototype.error = null;
-			FileReader.prototype.onabort = null;
-			FileReader.prototype.onerror = null;
-			FileReader.prototype.onload = null;
-			FileReader.prototype.onloadend = null;
-			FileReader.prototype.onloadstart = null;
-			FileReader.prototype.onprogress = null;
-
-			FileReader.prototype.readAsDataURL = function (blob) {
-				_read(this, blob, "readAsDataURL");
-				this.result = "data:" + blob.type + ";base64," + array2base64(blob._buffer);
-			};
-
-			FileReader.prototype.readAsText = function (blob) {
-				_read(this, blob, "readAsText");
-				this.result = textDecode(blob._buffer);
-			};
-
-			FileReader.prototype.readAsArrayBuffer = function (blob) {
-				_read(this, blob, "readAsText");
-				// return ArrayBuffer when possible
-				this.result = (blob._buffer.buffer || blob._buffer).slice();
-			};
-
-			FileReader.prototype.abort = function () {};
-
-			/********************************************************/
-			/*                         URL                          */
-			/********************************************************/
-			URL.createObjectURL = function (blob) {
-				return blob instanceof Blob
-					? "data:" + blob.type + ";base64," + array2base64(blob._buffer)
-					: createObjectURL.call(URL, blob);
-			};
-
-			URL.revokeObjectURL = function (url) {
-				revokeObjectURL && revokeObjectURL.call(URL, url);
-			};
-
-			/********************************************************/
-			/*                         XHR                          */
-			/********************************************************/
-			var _send = global.XMLHttpRequest && global.XMLHttpRequest.prototype.send;
-			if (_send) {
-				XMLHttpRequest.prototype.send = function (data) {
-					if (data instanceof Blob) {
-						this.setRequestHeader("Content-Type", data.type);
-						_send.call(this, textDecode(data._buffer));
-					} else {
-						_send.call(this, data);
-					}
-				};
-			}
-
-			exports.Blob = Blob;
-			exports.File = File;
-			exports.FileReader = FileReader;
-			exports.URL = URL;
-		}
-
-		function fixFileAndXHR () {
-			var isIE = !!global.ActiveXObject || (
-				"-ms-scroll-limit" in document.documentElement.style &&
-				"-ms-ime-align" in document.documentElement.style
-			);
-
-			// Monkey patched
-			// IE doesn't set Content-Type header on XHR whose body is a typed Blob
-			// https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/6047383
-			var _send = global.XMLHttpRequest && global.XMLHttpRequest.prototype.send;
-			if (isIE && _send) {
-				XMLHttpRequest.prototype.send = function (data) {
-					if (data instanceof Blob) {
-						this.setRequestHeader("Content-Type", data.type);
-						_send.call(this, data);
-					} else {
-						_send.call(this, data);
-					}
-				};
-			}
-
-			try {
-				new File([], "");
-				exports.File = global.File;
-				exports.FileReader = global.FileReader;
-			} catch (e) {
-				try {
-					exports.File = new Function("class File extends Blob {" +
-						"constructor(chunks, name, opts) {" +
-							"opts = opts || {};" +
-							"super(chunks, opts || {});" +
-							"this.name = name.replace(/\\//g, \":\");" +
-							"this.lastModifiedDate = opts.lastModified ? new Date(opts.lastModified) : new Date();" +
-							"this.lastModified = +this.lastModifiedDate;" +
-						"}};" +
-						"return new File([], \"\"), File"
-					)();
-				} catch (e) {
-					exports.File = function (b, d, c) {
-						var blob = new Blob(b, c);
-						var t = c && void 0 !== c.lastModified ? new Date(c.lastModified) : new Date();
-
-						blob.name = d.replace(/\//g, ":");
-						blob.lastModifiedDate = t;
-						blob.lastModified = +t;
-						blob.toString = function () {
-							return "[object File]";
-						};
-
-						if (strTag) {
-							blob[strTag] = "File";
-						}
-
-						return blob;
-					};
-				}
-			}
-		}
-
-		if (blobSupported) {
-			fixFileAndXHR();
-			exports.Blob = blobSupportsArrayBufferView ? global.Blob : BlobConstructor;
-		} else if (blobBuilderSupported) {
-			fixFileAndXHR();
-			exports.Blob = BlobBuilderConstructor;
-		} else {
-			FakeBlobBuilder();
-		}
-
-		if (strTag) {
-			if (!exports.File.prototype[strTag]) exports.File.prototype[strTag] = "File";
-			if (!exports.Blob.prototype[strTag]) exports.Blob.prototype[strTag] = "Blob";
-			if (!exports.FileReader.prototype[strTag]) exports.FileReader.prototype[strTag] = "FileReader";
-		}
-
-		var blob = exports.Blob.prototype;
-		var stream;
-
-		try {
-			new ReadableStream({ type: "bytes" });
-			stream = function stream() {
-				var position = 0;
-				var blob = this;
-
-				return new ReadableStream({
-					type: "bytes",
-					autoAllocateChunkSize: 524288,
-
-					pull: function (controller) {
-						var v = controller.byobRequest.view;
-						var chunk = blob.slice(position, position + v.byteLength);
-						return chunk.arrayBuffer()
-							.then(function (buffer) {
-								var uint8array = new Uint8Array(buffer);
-								var bytesRead = uint8array.byteLength;
-
-								position += bytesRead;
-								v.set(uint8array);
-								controller.byobRequest.respond(bytesRead);
-
-								if(position >= blob.size)
-									controller.close();
-							});
-					}
-				});
-			};
-		} catch (e) {
-			try {
-				new ReadableStream({});
-				stream = function stream(blob){
-					var position = 0;
-
-					return new ReadableStream({
-						pull: function (controller) {
-							var chunk = blob.slice(position, position + 524288);
-
-							return chunk.arrayBuffer().then(function (buffer) {
-								position += buffer.byteLength;
-								var uint8array = new Uint8Array(buffer);
-								controller.enqueue(uint8array);
-
-								if (position == blob.size)
-									controller.close();
-							});
-						}
-					});
-				};
-			} catch (e) {
-				try {
-					new Response("").body.getReader().read();
-					stream = function stream() {
-						return (new Response(this)).body;
-					};
-				} catch (e) {
-					stream = function stream() {
-						throw new Error("Include https://github.com/MattiasBuelens/web-streams-polyfill");
-					};
-				}
-			}
-		}
-
-		function promisify(obj) {
-			return new Promise(function(resolve, reject) {
-				obj.onload = obj.onerror = function(evt) {
-					obj.onload = obj.onerror = null;
-
-					evt.type === "load" ?
-						resolve(obj.result || obj) :
-						reject(new Error("Failed to read the blob/file"));
-				};
-			});
-		}
-
-		if (!blob.arrayBuffer) {
-			blob.arrayBuffer = function arrayBuffer() {
-				var fr = new FileReader();
-				fr.readAsArrayBuffer(this);
-				return promisify(fr);
-			};
-		}
-
-		if (!blob.text) {
-			blob.text = function text() {
-				var fr = new FileReader();
-				fr.readAsText(this);
-				return promisify(fr);
-			};
-		}
-
-		if (!blob.stream) {
-			blob.stream = stream;
-		}
-	});
-})(
-	typeof self !== "undefined" && self ||
-		typeof window !== "undefined" && window ||
-		typeof __webpack_require__.g !== "undefined" && __webpack_require__.g ||
-		this
-);
-
-
-/***/ }),
-
 /***/ "./node_modules/canvas/browser.js":
 /*!****************************************!*\
   !*** ./node_modules/canvas/browser.js ***!
@@ -47246,9 +46533,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "FITSWriter": () => (/* binding */ FITSWriter)
 /* harmony export */ });
-/* harmony import */ var blob_polyfill__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! blob-polyfill */ "./node_modules/blob-polyfill/Blob.js");
-/* harmony import */ var _model_FITSHeaderItem_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./model/FITSHeaderItem.js */ "./node_modules/jsfitsio/lib-esm/model/FITSHeaderItem.js");
-/* harmony import */ var _ParseUtils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ParseUtils.js */ "./node_modules/jsfitsio/lib-esm/ParseUtils.js");
+/* harmony import */ var _model_FITSHeaderItem_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./model/FITSHeaderItem.js */ "./node_modules/jsfitsio/lib-esm/model/FITSHeaderItem.js");
+/* harmony import */ var _ParseUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./ParseUtils.js */ "./node_modules/jsfitsio/lib-esm/ParseUtils.js");
 /**
  * Summary. (bla bla bla)
  *
@@ -47268,7 +46554,7 @@ __webpack_require__.r(__webpack_exports__);
  * -64	64-bit IEEE double precision floating point
  *
  */
-
+// import { Blob } from 'blob-polyfill';
 
 
 // import fs from 'node:fs/promises';
@@ -47284,7 +46570,7 @@ class FITSWriter {
         this.prepareFITS();
     }
     prepareHeader(headerDetails) {
-        const item = new _model_FITSHeaderItem_js__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("END");
+        const item = new _model_FITSHeaderItem_js__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("END");
         headerDetails.addItem(item);
         let str = "";
         for (let i = 0; i < headerDetails.getItemList().length; i++) {
@@ -47304,7 +46590,7 @@ class FITSWriter {
         // Javascript character occupies 2 16-bit -> reducing it to 1 byte
         this._headerArray = new Uint8Array(ab);
         for (let i = 0; i < str.length; i++) {
-            this._headerArray[i] = _ParseUtils_js__WEBPACK_IMPORTED_MODULE_2__.ParseUtils.getByteAt(str, i);
+            this._headerArray[i] = _ParseUtils_js__WEBPACK_IMPORTED_MODULE_1__.ParseUtils.getByteAt(str, i);
         }
     }
     // formatHeaderLine(item: string | undefined, value: string | number, comment: string) {
@@ -47400,7 +46686,7 @@ class FITSWriter {
     //   // }
     // }
     typedArrayToURL() {
-        const b = new blob_polyfill__WEBPACK_IMPORTED_MODULE_0__.Blob([this._fitsData], { type: "application/fits" });
+        const b = new Blob([this._fitsData], { type: "application/fits" });
         // console.log(`<html><body><img src='${URL.createObjectURL(b)}'</body></html>`);
         return URL.createObjectURL(b);
     }
@@ -48137,6 +47423,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _projections_HiPSProjection_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./projections/HiPSProjection.js */ "./node_modules/wcslight/lib-esm/projections/HiPSProjection.js");
 /* harmony import */ var _projections_HEALPixProjection_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./projections/HEALPixProjection.js */ "./node_modules/wcslight/lib-esm/projections/HEALPixProjection.js");
 /* harmony import */ var _projections_GnomonicProjection_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./projections/GnomonicProjection.js */ "./node_modules/wcslight/lib-esm/projections/GnomonicProjection.js");
+/* harmony import */ var _model_FITS_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./model/FITS.js */ "./node_modules/wcslight/lib-esm/model/FITS.js");
 /**
  * Summary. (bla bla bla)
  *
@@ -48159,9 +47446,8 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
+
 class WCSLight {
-    /** @constructs WCSLight */
-    constructor() { }
     static cutout(center, radius, pxsize, inproj, outproj) {
         return __awaiter(this, void 0, void 0, function* () {
             const outRADecList = outproj.getImageRADecList(center, radius, pxsize);
@@ -48182,10 +47468,10 @@ class WCSLight {
                 if (invalues !== undefined) {
                     const fitsdata = outproj.setPxsValue(invalues, fitsHeaderParams);
                     const fitsheader = outproj.getFITSHeader();
-                    // let canvas2d = outproj.getCanvas2d();
+                    const fits = new _model_FITS_js__WEBPACK_IMPORTED_MODULE_5__.FITS(fitsheader, fitsdata);
                     const res = {
-                        fitsheader: fitsheader,
-                        fitsdata: fitsdata,
+                        fitsheader: fits.header,
+                        fitsdata: fits.data,
                         inproj: inproj,
                         outproj: outproj,
                         fitsused: inproj.fitsUsed
@@ -48193,9 +47479,10 @@ class WCSLight {
                     return res;
                 }
                 else {
+                    const nanFits = outproj.generateFITSWithNaN();
                     const res = {
-                        fitsheader: null,
-                        fitsdata: null,
+                        fitsheader: nanFits.header,
+                        fitsdata: nanFits.data,
                         inproj: inproj,
                         outproj: outproj,
                         fitsused: inproj.fitsUsed
@@ -48332,6 +47619,33 @@ var CoordsType;
     CoordsType["ASTRO"] = "astro";
 })(CoordsType || (CoordsType = {}));
 //# sourceMappingURL=CoordsType.js.map
+
+/***/ }),
+
+/***/ "./node_modules/wcslight/lib-esm/model/FITS.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/wcslight/lib-esm/model/FITS.js ***!
+  \*****************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "FITS": () => (/* binding */ FITS)
+/* harmony export */ });
+class FITS {
+    constructor(header, data) {
+        this._header = header;
+        this._data = data;
+    }
+    get header() {
+        return this._header;
+    }
+    get data() {
+        return this._data;
+    }
+}
+//# sourceMappingURL=FITS.js.map
 
 /***/ }),
 
@@ -48720,6 +48034,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "AbstractProjection": () => (/* binding */ AbstractProjection)
 /* harmony export */ });
+/* harmony import */ var jsfitsio__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jsfitsio */ "./node_modules/jsfitsio/lib-esm/index.js");
+/* harmony import */ var _model_FITS_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../model/FITS.js */ "./node_modules/wcslight/lib-esm/model/FITS.js");
+
+
 /**
  * Summary. (bla bla bla)
  *
@@ -48729,6 +48047,87 @@ __webpack_require__.r(__webpack_exports__);
  * @author Fabrizio Giordano <fabriziogiordano77@gmail.com>
  */
 class AbstractProjection {
+    constructor(ctype1, ctype2, naxis1 = 0, naxis2 = 0, pxsize = 0) {
+        this._ctype1 = ctype1;
+        this._ctype2 = ctype2;
+        this._naxis1 = naxis1;
+        this._naxis2 = naxis2;
+        this._pxsize = pxsize;
+    }
+    get naxis1() {
+        return this._naxis1;
+    }
+    set naxis1(value) {
+        this._naxis1 = value;
+    }
+    get naxis2() {
+        return this._naxis2;
+    }
+    set naxis2(value) {
+        this._naxis2 = value;
+    }
+    get pxsize() {
+        return this._pxsize;
+    }
+    set pxsize(value) {
+        this._pxsize = value;
+    }
+    get ctype1() {
+        return this._ctype1;
+    }
+    set ctype1(value) {
+        this._ctype1 = value;
+    }
+    get ctype2() {
+        return this._ctype2;
+    }
+    set ctype2(value) {
+        this._ctype2 = value;
+    }
+    // public abstract generateFITSWithNaN(): FITS;
+    generateFITSWithNaN() {
+        if (!this.naxis1 || !this.naxis2) {
+            throw new Error("NAXIS1 and NAXIS2 must be initialized before generating FITS.");
+        }
+        let fitsheaders = [];
+        let fitsheader = new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeader();
+        fitsheader.addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS1", this.naxis1));
+        fitsheader.addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS2", this.naxis2));
+        fitsheader.addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS", 2));
+        fitsheader.addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("BITPIX", "-64"));
+        fitsheader.addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("SIMPLE", "T"));
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("BSCALE", 1));
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("BZERO", 0));
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE1", this.ctype1));
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE2", this.ctype2));
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CDELT1", this.pxsize)); // ??? Pixel spacing along axis 1 ???
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CDELT2", this.pxsize)); // ??? Pixel spacing along axis 2 ???
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRPIX1", this.naxis1 / 2)); // central/reference pixel i along naxis1
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRPIX2", this.naxis2 / 2)); // central/reference pixel j along naxis2
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRVAL1", NaN)); // central/reference pixel RA
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRVAL2", NaN)); // central/reference pixel Dec
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("ORIGIN", "'WCSLight v.0.x'"));
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("COMMENT", "'WCSLight v0.x developed by F.Giordano and Y.Ascasibar'"));
+        fitsheader.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("END"));
+        fitsheaders.push(fitsheader);
+        let bytesXelem = 8;
+        // why not usign a simple arrays?
+        let pv = new Map();
+        pv.set(0, new Array(this.naxis2));
+        pv.get(0);
+        for (let r = 0; r < this.naxis2; r++) {
+            pv.get(0)[r] = new Uint8Array(this.naxis1 * bytesXelem);
+            pv.get(0)[r].fill(255);
+        }
+        const fitsNan = new _model_FITS_js__WEBPACK_IMPORTED_MODULE_1__.FITS(fitsheaders, pv);
+        return fitsNan;
+    }
+    computeSquaredNaxes(d, ps) {
+        // first approximation to be checked
+        this._naxis1 = Math.ceil(d / ps);
+        this._naxis2 = this._naxis1;
+        this._pxsize = ps;
+    }
 }
 //# sourceMappingURL=AbstractProjection.js.map
 
@@ -48772,9 +48171,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 class GnomonicProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_0__.AbstractProjection {
     constructor(infile) {
-        super();
-        this._ctype1 = "RA---TAN";
-        this._ctype2 = "DEC--TAN";
+        super("'RA---TAN'", "'DEC--TAN'");
         if (infile) {
             this._inflie = infile;
         }
@@ -48783,14 +48180,18 @@ class GnomonicProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE
         throw new Error('Method not implemented.');
     }
     initFromFile(infile) {
+        const _super = Object.create(null, {
+            naxis1: { get: () => super.naxis1, set: v => super.naxis1 = v },
+            naxis2: { get: () => super.naxis2, set: v => super.naxis2 = v }
+        });
         return __awaiter(this, void 0, void 0, function* () {
             let fp = new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSParser(infile);
             let promise = fp.loadFITS().then(fits => {
                 // console.log(fits.header);
                 this._pxvalues.set(0, fits.data);
                 this._fitsheader[0] = fits.header;
-                this._naxis1 = fits.header.get("NAXIS1");
-                this._naxis2 = fits.header.get("NAXIS2");
+                _super.naxis1 = fits.header.get("NAXIS1");
+                _super.naxis2 = fits.header.get("NAXIS2");
                 this._craDeg = fits.header.getItemListOf("CRVAL1")[0].value;
                 this._cdecDeg = fits.header.getItemListOf("CRVAL2")[0].value;
                 // TODO CDELT could not be present. In this is the case, 
@@ -48798,11 +48199,11 @@ class GnomonicProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE
                 // [Ref. Representation of celestial coordinates in FITS - equation (1)]
                 this._pxsize1 = this._fitsheader[0].getItemListOf("CDELT1")[0].value;
                 this._pxsize2 = this._fitsheader[0].getItemListOf("CDELT2")[0].value;
-                this._minra = this._craDeg - this._pxsize1 * this._naxis1 / 2;
+                this._minra = this._craDeg - this._pxsize1 * _super.naxis1 / 2;
                 if (this._minra < 0) {
                     this._minra += 360;
                 }
-                this._mindec = this._cdecDeg - this._pxsize2 * this._naxis2 / 2;
+                this._mindec = this._cdecDeg - this._pxsize2 * _super.naxis2 / 2;
                 return fits;
             });
             yield promise;
@@ -48847,14 +48248,14 @@ class GnomonicProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE
         }
         this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("BZERO", bzero));
         this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("NAXIS", 2));
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("NAXIS1", this._naxis1));
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("NAXIS2", this._naxis2));
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CTYPE1", this._ctype1));
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CTYPE2", this._ctype2));
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CDELT1", this._pxsize)); // ??? Pixel spacing along axis 1 ???
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CDELT2", this._pxsize)); // ??? Pixel spacing along axis 2 ???
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CRPIX1", this._naxis1 / 2)); // central/reference pixel i along naxis1
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CRPIX2", this._naxis2 / 2)); // central/reference pixel j along naxis2
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("NAXIS1", super.naxis1));
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("NAXIS2", super.naxis2));
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CTYPE1", super.ctype1));
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CTYPE2", super.ctype2));
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CDELT1", super.pxsize)); // ??? Pixel spacing along axis 1 ???
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CDELT2", super.pxsize)); // ??? Pixel spacing along axis 2 ???
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CRPIX1", super.naxis1 / 2)); // central/reference pixel i along naxis1
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CRPIX2", super.naxis2 / 2)); // central/reference pixel j along naxis2
         this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CRVAL1", this._craDeg)); // central/reference pixel RA
         this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_1__.FITSHeaderItem("CRVAL2", this._cdecDeg)); // central/reference pixel Dec
         let min = bzero + bscale * this._minphysicalval;
@@ -48881,6 +48282,10 @@ class GnomonicProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE
         return header;
     }
     getPixValues(inputPixelsList) {
+        const _super = Object.create(null, {
+            naxis2: { get: () => super.naxis2 },
+            naxis1: { get: () => super.naxis1 }
+        });
         return __awaiter(this, void 0, void 0, function* () {
             let promise = new Promise((resolve, reject) => {
                 try {
@@ -48892,8 +48297,8 @@ class GnomonicProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE
                         let imgpx = inputPixelsList[p];
                         // TODO check when input is undefined. atm it puts 0 bur it should be BLANK
                         // TODO why I am getting negative i and j? check world2pix!!!
-                        if ((imgpx._j) < 0 || (imgpx._j) >= this._naxis2 ||
-                            (imgpx._i) < 0 || (imgpx._i) >= this._naxis1) {
+                        if ((imgpx._j) < 0 || (imgpx._j) >= _super.naxis2 ||
+                            (imgpx._i) < 0 || (imgpx._i) >= _super.naxis1) {
                             for (let b = 0; b < bytesXelem; b++) {
                                 values[p * bytesXelem + b] = blankBytes[b];
                             }
@@ -48912,12 +48317,6 @@ class GnomonicProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE
             });
             return promise;
         });
-    }
-    computeSquaredNaxes(d, ps) {
-        // first aprroximation to be checked
-        this._naxis1 = Math.ceil(d / ps);
-        this._naxis2 = this._naxis1;
-        this._pxsize = ps;
     }
     setPxsValue(values, fitsHeaderParams) {
         // let bytesXelem = Math.abs(fitsHeaderParams.get("BITPIX") / 8);
@@ -49066,6 +48465,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AbstractProjection.js */ "./node_modules/wcslight/lib-esm/projections/AbstractProjection.js");
 
 class HEALPixProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_0__.AbstractProjection {
+    constructor() {
+        super("'RA---HPX'", "'DEC--HPX'");
+    }
     get fitsUsed() {
         throw new Error('Method not implemented.');
     }
@@ -49085,9 +48487,6 @@ class HEALPixProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_
         throw new Error('Method not implemented.');
     }
     getPixValues(inputPixelsList) {
-        throw new Error('Method not implemented.');
-    }
-    computeSquaredNaxes(d, ps) {
         throw new Error('Method not implemented.');
     }
     setPxsValue(values, fitsHeaderParams) {
@@ -49173,6 +48572,7 @@ class HiPSHelper {
          *
          */
         let k = Math.log2((HiPSHelper.RES_ORDER_0 / pxXtile) / pxsize);
+        // let k = Math.log2(HiPSHelper.RES_ORDER_0 / (pxXtile * pxsize));
         k = Math.round(k);
         // let theta0px = HiPSHelper.RES_ORDER_0;
         // let k = Math.log2(theta0px) - Math.log2(pxsize * 2**9);
@@ -49183,6 +48583,44 @@ class HiPSHelper {
         //     "norder" : k
         // };
         return k;
+    }
+    static computeHiPSOrder2(pxsize, pxXtile) {
+        const k = Math.log2(Math.sqrt(Math.PI / 3) / (pxsize * pxXtile));
+        const order = Math.round(k);
+        console.warn(k);
+        return order;
+    }
+    // based on "HiPS – Hierarchical Progressive Survey" IVOA recomandation (formula on table 5)
+    static computeOrder(pxAngSizeDeg, pxTileWidth) {
+        console.log(`Computing HiPS order having pixel angular size of ${pxAngSizeDeg} in degrees`);
+        const deg2rad = Math.PI / 180;
+        const pxAngSizeRad = pxAngSizeDeg * deg2rad;
+        console.log(`pixel angular res in radians ${pxAngSizeRad}`);
+        const computedOrder = 0.5 * Math.log2(Math.PI / (3 * pxAngSizeRad * pxAngSizeRad * pxTileWidth * pxTileWidth));
+        console.log(`Order ${computedOrder}`);
+        if (computedOrder < 0) {
+            return 0;
+        }
+        return Math.floor(computedOrder);
+    }
+    // based on "HiPS – Hierarchical Progressive Survey" IVOA recomandation (formula on table 5)
+    static computePxAngularSize(pxTileWidth, order) {
+        const computedPxAngSizeRadiant = Math.sqrt(4 * Math.PI / (12 * Math.pow((pxTileWidth * (Math.pow(2, order))), 2)));
+        console.log(`Computing Pixel size with tile of ${pxTileWidth} pixels and order ${order}`);
+        const rad2deg = 180 / Math.PI;
+        const deg = computedPxAngSizeRadiant * rad2deg;
+        const arcmin = computedPxAngSizeRadiant * rad2deg * 60;
+        const arcsec = computedPxAngSizeRadiant * rad2deg * 3600;
+        console.log("Pixel size in radiant:" + computedPxAngSizeRadiant);
+        console.log("Pixel size in degrees:" + deg);
+        console.log("Pixel size in arcmin:" + arcmin);
+        console.log("Pixel size in arcsec:" + arcsec);
+        return {
+            "rad": computedPxAngSizeRadiant,
+            "deg": deg,
+            "arcmin": arcmin,
+            "arcsec": arcsec
+        };
     }
     /**
      * Reference: HiPS – Hierarchical Progressive Survey page 11
@@ -49452,12 +48890,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var jsfitsio__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jsfitsio */ "./node_modules/jsfitsio/lib-esm/index.js");
 /* harmony import */ var healpixjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! healpixjs */ "./node_modules/healpixjs/lib-esm/index.js");
-/* harmony import */ var _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./HiPSHelper.js */ "./node_modules/wcslight/lib-esm/projections/HiPSHelper.js");
-/* harmony import */ var _model_ImagePixel_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../model/ImagePixel.js */ "./node_modules/wcslight/lib-esm/model/ImagePixel.js");
-/* harmony import */ var _model_Utils_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../model/Utils.js */ "./node_modules/wcslight/lib-esm/model/Utils.js");
-/* harmony import */ var _model_Point_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../model/Point.js */ "./node_modules/wcslight/lib-esm/model/Point.js");
-/* harmony import */ var _model_CoordsType_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../model/CoordsType.js */ "./node_modules/wcslight/lib-esm/model/CoordsType.js");
-/* harmony import */ var _model_NumberType_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../model/NumberType.js */ "./node_modules/wcslight/lib-esm/model/NumberType.js");
+/* harmony import */ var _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./AbstractProjection.js */ "./node_modules/wcslight/lib-esm/projections/AbstractProjection.js");
+/* harmony import */ var _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./HiPSHelper.js */ "./node_modules/wcslight/lib-esm/projections/HiPSHelper.js");
+/* harmony import */ var _model_ImagePixel_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../model/ImagePixel.js */ "./node_modules/wcslight/lib-esm/model/ImagePixel.js");
+/* harmony import */ var _model_Utils_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../model/Utils.js */ "./node_modules/wcslight/lib-esm/model/Utils.js");
+/* harmony import */ var _model_Point_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../model/Point.js */ "./node_modules/wcslight/lib-esm/model/Point.js");
+/* harmony import */ var _model_CoordsType_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../model/CoordsType.js */ "./node_modules/wcslight/lib-esm/model/CoordsType.js");
+/* harmony import */ var _model_NumberType_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../model/NumberType.js */ "./node_modules/wcslight/lib-esm/model/NumberType.js");
 
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -49488,7 +48927,8 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
-class HiPSProjection {
+
+class HiPSProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_2__.AbstractProjection {
     /**
      *
      * * ex with single local file:
@@ -49510,16 +48950,23 @@ class HiPSProjection {
      */
     //  constructor(fitsfilepath?: string, hipsBaseURI?: string, pxsize?: number, order?: number) {
     constructor() {
+        super("'RA---HPX'", "'DEC--HPX'");
+        // _naxis1!: number;
+        // _naxis2!: number;
         this._isGalactic = false;
         this._fitsUsed = [];
         this._wcsname = "HPX"; // TODO check WCS standard
-        this._ctype1 = "RA---HPX";
-        this._ctype2 = "DEC--HPX";
+        // this._ctype1 = "RA---HPX";
+        // this._ctype2 = "DEC--HPX";
         this._pxvalues = new Map();
         this._fitsheaderlist = new Array();
         this._radeclist = new Array();
     }
     parsePropertiesFile(baseUrl) {
+        const _super = Object.create(null, {
+            naxis1: { get: () => super.naxis1, set: v => super.naxis1 = v },
+            naxis2: { get: () => super.naxis2, set: v => super.naxis2 = v }
+        });
         return __awaiter(this, void 0, void 0, function* () {
             const fp = new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSParser(null);
             const promise = fp.getFile(baseUrl + "/properties").then((propFile) => {
@@ -49556,8 +49003,8 @@ class HiPSProjection {
                     }
                     else if (key == "hips_tile_width") {
                         this._HIPS_TILE_WIDTH = parseInt(val);
-                        this._naxis1 = this._HIPS_TILE_WIDTH;
-                        this._naxis2 = this._HIPS_TILE_WIDTH;
+                        _super.naxis1 = this._HIPS_TILE_WIDTH;
+                        _super.naxis2 = this._HIPS_TILE_WIDTH;
                         console.log("hips_tile_width " + this._HIPS_TILE_WIDTH);
                     }
                     else if (key == "hips_frame" && val == "galactic") {
@@ -49571,6 +49018,10 @@ class HiPSProjection {
         });
     }
     initFromFile(fitsfilepath) {
+        const _super = Object.create(null, {
+            naxis1: { get: () => super.naxis1, set: v => super.naxis1 = v },
+            naxis2: { get: () => super.naxis2, set: v => super.naxis2 = v }
+        });
         return __awaiter(this, void 0, void 0, function* () {
             let fp = new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSParser(fitsfilepath);
             let promise = fp.loadFITS().then(fits => {
@@ -49578,11 +49029,11 @@ class HiPSProjection {
                 this._fitsheaderlist[0] = fits.header;
                 let order = fits.header.get("ORDER");
                 this.init(order);
-                this._naxis1 = fits.header.get("NAXIS1");
-                this._naxis2 = fits.header.get("NAXIS2");
-                this._HIPS_TILE_WIDTH = this._naxis1;
+                _super.naxis1 = fits.header.get("NAXIS1");
+                _super.naxis2 = fits.header.get("NAXIS2");
+                this._HIPS_TILE_WIDTH = _super.naxis1;
                 this._pixno = fits.header.get("NPIX");
-                this._xyGridProj = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.setupByTile(this._pixno, this._hp);
+                this._xyGridProj = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.setupByTile(this._pixno, this._hp);
                 return fits;
             });
             yield promise;
@@ -49590,13 +49041,18 @@ class HiPSProjection {
         });
     }
     initFromHiPSLocationAndPxSize(baseUrl, pxsize) {
+        const _super = Object.create(null, {
+            pxsize: { get: () => super.pxsize, set: v => super.pxsize = v }
+        });
         return __awaiter(this, void 0, void 0, function* () {
             this._hipsBaseURI = baseUrl;
-            this._pxsize = pxsize;
+            _super.pxsize = pxsize;
             if (this._HIPS_TILE_WIDTH === undefined) {
                 yield this.parsePropertiesFile(baseUrl);
             }
-            let order = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.computeHiPSOrder(pxsize, this._HIPS_TILE_WIDTH);
+            // let order = HiPSHelper.computeHiPSOrder(pxsize, this._HIPS_TILE_WIDTH);
+            // let order2 = HiPSHelper.computeHiPSOrder2(pxsize, this._HIPS_TILE_WIDTH);
+            let order = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.computeOrder(pxsize, this._HIPS_TILE_WIDTH);
             if (order > this._HIPS_MAX_ORDER) {
                 order = this._HIPS_MAX_ORDER;
             }
@@ -49604,6 +49060,9 @@ class HiPSProjection {
         });
     }
     initFromHiPSLocationAndOrder(baseUrl, order) {
+        const _super = Object.create(null, {
+            pxsize: { get: () => super.pxsize, set: v => super.pxsize = v }
+        });
         return __awaiter(this, void 0, void 0, function* () {
             this._hipsBaseURI = baseUrl;
             if (this._HIPS_TILE_WIDTH === undefined) {
@@ -49612,7 +49071,7 @@ class HiPSProjection {
             if (order > this._HIPS_MAX_ORDER) {
                 order = this._HIPS_MAX_ORDER;
             }
-            this._pxsize = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.computePxSize(order, this._HIPS_TILE_WIDTH);
+            _super.pxsize = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.computePxSize(order, this._HIPS_TILE_WIDTH);
             this.init(order);
         });
     }
@@ -49639,11 +49098,11 @@ class HiPSProjection {
                 header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("BZERO", bzero));
             }
             header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS", 2));
-            header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS1", _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.DEFAULT_Naxis1_2));
-            header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS2", _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.DEFAULT_Naxis1_2));
+            header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS1", _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.DEFAULT_Naxis1_2));
+            header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS2", _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.DEFAULT_Naxis1_2));
             header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("ORDER", this._norder));
-            header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE1", this._ctype1));
-            header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE2", this._ctype2));
+            header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE1", super.ctype1));
+            header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE2", super.ctype2));
             // header.addItem(new FITSHeaderItem("CRPIX1", HiPSHelper.DEFAULT_Naxis1_2/2)); // central/reference pixel i along naxis1
             // header.addItem(new FITSHeaderItem("CRPIX2", HiPSHelper.DEFAULT_Naxis1_2/2)); // central/reference pixel j along naxis2
             header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("ORIGIN", "WCSLight v.0.x"));
@@ -49756,12 +49215,6 @@ class HiPSProjection {
             return values;
         });
     }
-    computeSquaredNaxes(d, ps) {
-        // first aprroximation to be checked
-        this._naxis1 = Math.ceil(d / ps);
-        this._naxis2 = this._naxis1;
-        this._pxsize = ps;
-    }
     prepareCommonHeader(fitsheaderlist) {
         if (fitsheaderlist === undefined) {
             return;
@@ -49824,19 +49277,19 @@ class HiPSProjection {
         let row;
         for (let rdidx = 0; rdidx < this._radeclist.length; rdidx++) {
             [ra, dec] = this._radeclist[rdidx];
-            let ac = (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_4__.fillAstro)(ra, dec, _model_NumberType_js__WEBPACK_IMPORTED_MODULE_7__.NumberType.DEGREES);
-            let sc = (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_4__.astroToSpherical)(ac);
+            let ac = (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_5__.fillAstro)(ra, dec, _model_NumberType_js__WEBPACK_IMPORTED_MODULE_8__.NumberType.DEGREES);
+            let sc = (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_5__.astroToSpherical)(ac);
             let ptg = new healpixjs__WEBPACK_IMPORTED_MODULE_1__.Pointing(null, false, sc.thetaRad, sc.phiRad);
             let pixtileno = this._hp.ang2pix(ptg);
-            let xyGridProj = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.setupByTile(pixtileno, this._hp);
+            let xyGridProj = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.setupByTile(pixtileno, this._hp);
             // let rarad = degToRad(ra);
             // let decrad = degToRad(dec);
             // TODO CHECK THIS POINT before it was with ra and dec in radians
-            let xy = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.world2intermediate(ac);
+            let xy = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.world2intermediate(ac);
             if (this._HIPS_TILE_WIDTH === undefined) {
                 throw new Error("this._HIPS_TILE_WIDTH undefined");
             }
-            let ij = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.intermediate2pix(xy[0], xy[1], xyGridProj, this._HIPS_TILE_WIDTH);
+            let ij = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.intermediate2pix(xy[0], xy[1], xyGridProj, this._HIPS_TILE_WIDTH);
             col = ij[0];
             row = ij[1];
             for (let b = 0; b < bytesXelem; b++) {
@@ -49885,8 +49338,8 @@ class HiPSProjection {
                 header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NPIX", tileno));
                 let vec3 = this._hp.pix2vec(tileno);
                 let ptg = new healpixjs__WEBPACK_IMPORTED_MODULE_1__.Pointing(vec3);
-                let crval1 = (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_4__.radToDeg)(ptg.phi);
-                let crval2 = 90 - (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_4__.radToDeg)(ptg.theta);
+                let crval1 = (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_5__.radToDeg)(ptg.phi);
+                let crval2 = 90 - (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_5__.radToDeg)(ptg.theta);
                 header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRVAL1", crval1));
                 header.addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRVAL2", crval2));
                 this._fitsheaderlist.push(header);
@@ -49902,7 +49355,7 @@ class HiPSProjection {
     }
     getImageRADecList(center, radiusDeg) {
         let ptg = new healpixjs__WEBPACK_IMPORTED_MODULE_1__.Pointing(null, false, center.spherical.thetaRad, center.spherical.phiRad);
-        let radius_rad = (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_4__.degToRad)(radiusDeg);
+        let radius_rad = (0,_model_Utils_js__WEBPACK_IMPORTED_MODULE_5__.degToRad)(radiusDeg);
         // with fact 8 the original Java code starts returning the the ptg pixel. with my JS porting only from fact 16
         let rangeset = this._hp.queryDiscInclusive(ptg, radius_rad, 4); // <= check it 
         this._tileslist = [];
@@ -49920,7 +49373,7 @@ class HiPSProjection {
         let mindec = center.astro.decDeg - radiusDeg;
         let maxdec = center.astro.decDeg + radiusDeg;
         this._tileslist.forEach((tileno) => {
-            this._xyGridProj = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.setupByTile(tileno, this._hp);
+            this._xyGridProj = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.setupByTile(tileno, this._hp);
             // for (let j = 0; j < HiPSHelper.DEFAULT_Naxis1_2; j++) {
             // 	for (let i = 0; i < HiPSHelper.DEFAULT_Naxis1_2; i++) {
             for (let j = 0; j < this._HIPS_TILE_WIDTH; j++) {
@@ -49937,7 +49390,7 @@ class HiPSProjection {
         return this._radeclist;
     }
     pix2world(i, j) {
-        let xy = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.pix2intermediate(i, j, this._xyGridProj, this._naxis1, this._naxis2);
+        let xy = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.pix2intermediate(i, j, this._xyGridProj, super.naxis1, super.naxis2);
         // TODO CHECK BELOW before it was only which is supposed to be wrong since intermediate2world returns SphericalCoords, not AstroCoords
         /**
         let raDecDeg = HiPSHelper.intermediate2world(xy[0], xy[1]);
@@ -49946,7 +49399,7 @@ class HiPSProjection {
         }
         return raDecDeg;
         */
-        let p = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.intermediate2world(xy[0], xy[1]);
+        let p = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.intermediate2world(xy[0], xy[1]);
         // if (p.spherical.phiDeg > 360){
         // 	sc.phiDeg -= 360;
         // }
@@ -49987,26 +49440,25 @@ class HiPSProjection {
             if HiPS in galactic => convert the full list of (RA, Dec) to Galactic  (l, b)
         */
         if (this._isGalactic) {
-            let finalradeclist = this.convertToGalactic(radeclist);
-            radeclist = finalradeclist;
+            radeclist = this.convertToGalactic(radeclist);
         }
         radeclist.forEach(([ra, dec]) => {
-            let p = new _model_Point_js__WEBPACK_IMPORTED_MODULE_5__.Point(_model_CoordsType_js__WEBPACK_IMPORTED_MODULE_6__.CoordsType.ASTRO, _model_NumberType_js__WEBPACK_IMPORTED_MODULE_7__.NumberType.DEGREES, ra, dec);
+            const p = new _model_Point_js__WEBPACK_IMPORTED_MODULE_6__.Point(_model_CoordsType_js__WEBPACK_IMPORTED_MODULE_7__.CoordsType.ASTRO, _model_NumberType_js__WEBPACK_IMPORTED_MODULE_8__.NumberType.DEGREES, ra, dec);
             // let phiTheta_rad = HiPSHelper.astroDegToSphericalRad(ra, dec);
-            let ptg = new healpixjs__WEBPACK_IMPORTED_MODULE_1__.Pointing(null, false, p.spherical.thetaRad, p.spherical.phiRad);
+            const ptg = new healpixjs__WEBPACK_IMPORTED_MODULE_1__.Pointing(null, false, p.spherical.thetaRad, p.spherical.phiRad);
             tileno = this._hp.ang2pix(ptg);
             if (prevTileno !== tileno || prevTileno === undefined) {
-                this._xyGridProj = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.setupByTile(tileno, this._hp);
+                this._xyGridProj = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.setupByTile(tileno, this._hp);
                 prevTileno = tileno;
             }
             // let rarad =  HiPSHelper.degToRad(ra);
             // let decrad = HiPSHelper.degToRad(dec);
-            let xy = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.world2intermediate(p.astro);
+            const xy = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.world2intermediate(p.astro);
             if (this._HIPS_TILE_WIDTH === undefined) {
                 throw new Error("this._HIPS_TILE_WIDTH undefined");
             }
-            let ij = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_2__.HiPSHelper.intermediate2pix(xy[0], xy[1], this._xyGridProj, this._HIPS_TILE_WIDTH);
-            imgpxlist.push(new _model_ImagePixel_js__WEBPACK_IMPORTED_MODULE_3__.ImagePixel(ij[0], ij[1], tileno));
+            const ij = _HiPSHelper_js__WEBPACK_IMPORTED_MODULE_3__.HiPSHelper.intermediate2pix(xy[0], xy[1], this._xyGridProj, this._HIPS_TILE_WIDTH);
+            imgpxlist.push(new _model_ImagePixel_js__WEBPACK_IMPORTED_MODULE_4__.ImagePixel(ij[0], ij[1], tileno));
         });
         return imgpxlist;
     }
@@ -50027,11 +49479,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "MercatorProjection": () => (/* binding */ MercatorProjection)
 /* harmony export */ });
 /* harmony import */ var jsfitsio__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jsfitsio */ "./node_modules/jsfitsio/lib-esm/index.js");
-/* harmony import */ var _model_ImagePixel_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../model/ImagePixel.js */ "./node_modules/wcslight/lib-esm/model/ImagePixel.js");
-/* harmony import */ var _model_Point_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../model/Point.js */ "./node_modules/wcslight/lib-esm/model/Point.js");
-/* harmony import */ var _model_CoordsType_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../model/CoordsType.js */ "./node_modules/wcslight/lib-esm/model/CoordsType.js");
-/* harmony import */ var _model_NumberType_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../model/NumberType.js */ "./node_modules/wcslight/lib-esm/model/NumberType.js");
-/* harmony import */ var process__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! process */ "?f615");
+/* harmony import */ var _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./AbstractProjection.js */ "./node_modules/wcslight/lib-esm/projections/AbstractProjection.js");
+/* harmony import */ var _model_ImagePixel_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../model/ImagePixel.js */ "./node_modules/wcslight/lib-esm/model/ImagePixel.js");
+/* harmony import */ var _model_Point_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../model/Point.js */ "./node_modules/wcslight/lib-esm/model/Point.js");
+/* harmony import */ var _model_CoordsType_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../model/CoordsType.js */ "./node_modules/wcslight/lib-esm/model/CoordsType.js");
+/* harmony import */ var _model_NumberType_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../model/NumberType.js */ "./node_modules/wcslight/lib-esm/model/NumberType.js");
+/* harmony import */ var process__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! process */ "?f615");
 /**
  * Summary. (bla bla bla)
  *
@@ -50056,17 +49509,21 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 
-
-
-class MercatorProjection {
+class MercatorProjection extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_1__.AbstractProjection {
     constructor() {
+        super("'RA---MER'", "'DEC--MER'");
         this._wcsname = "MER"; // TODO check WCS standard and create ENUM
-        this._ctype1 = "RA---MER";
-        this._ctype2 = "DEC--MER";
+        // this._ctype1 = "RA---MER";
+        // this._ctype2 = "DEC--MER";
         this._pxvalues = new Map();
         this._fitsheader = new Array();
     }
     initFromFile(infile) {
+        const _super = Object.create(null, {
+            naxis1: { get: () => super.naxis1, set: v => super.naxis1 = v },
+            naxis2: { get: () => super.naxis2, set: v => super.naxis2 = v },
+            pxsize: { get: () => super.pxsize, set: v => super.pxsize = v }
+        });
         return __awaiter(this, void 0, void 0, function* () {
             let fp = new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSParser(infile);
             this._infile = infile;
@@ -50075,8 +49532,10 @@ class MercatorProjection {
                 // console.log(fits.header);
                 this._pxvalues.set(0, fits.data);
                 this._fitsheader[0] = fits.header;
-                this._naxis1 = fits.header.get("NAXIS1");
-                this._naxis2 = fits.header.get("NAXIS2");
+                _super.naxis1 = fits.header.get("NAXIS1");
+                _super.naxis2 = fits.header.get("NAXIS2");
+                // this._naxis1 = fits.header.get("NAXIS1");
+                // this._naxis2 = fits.header.get("NAXIS2");
                 this._craDeg = fits.header.getItemListOf("CRVAL1")[0].value;
                 this._cdecDeg = fits.header.getItemListOf("CRVAL2")[0].value;
                 // TODO CDELT could not be present. In this is the case, 
@@ -50088,16 +49547,16 @@ class MercatorProjection {
                 const pxsize2 = this._fitsheader[0].getItemListOf("CDELT2")[0].value;
                 if (pxsize1 !== pxsize2 || pxsize1 === undefined || pxsize2 === undefined) {
                     throw new Error("pxsize1 is not equal to pxsize2");
-                    process__WEBPACK_IMPORTED_MODULE_5__.exit;
+                    process__WEBPACK_IMPORTED_MODULE_6__.exit;
                 }
-                this._pxsize = pxsize1;
+                _super.pxsize = pxsize1;
                 // this._minra = this._craDeg - this._pxsize1 * this._naxis1 / 2;
-                this._minra = this._craDeg - this._pxsize * this._naxis1 / 2;
+                this._minra = this._craDeg - _super.pxsize * _super.naxis1 / 2;
                 if (this._minra < 0) {
                     this._minra += 360;
                 }
                 // this._mindec = this._cdecDeg - this._pxsize2 * this._naxis2 / 2;
-                this._mindec = this._cdecDeg - this._pxsize * this._naxis2 / 2;
+                this._mindec = this._cdecDeg - _super.pxsize * _super.naxis2 / 2;
                 return fits;
             });
             yield promise;
@@ -50126,8 +49585,8 @@ class MercatorProjection {
     }
     prepareFITSHeader(fitsHeaderParams) {
         this._fitsheader[0] = new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeader();
-        this._fitsheader[0].addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS1", this._naxis1));
-        this._fitsheader[0].addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS2", this._naxis2));
+        this._fitsheader[0].addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS1", super.naxis1));
+        this._fitsheader[0].addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS2", super.naxis2));
         this._fitsheader[0].addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("NAXIS", 2));
         this._fitsheader[0].addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("BITPIX", fitsHeaderParams.get("BITPIX")));
         this._fitsheader[0].addItemAtTheBeginning(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("SIMPLE", fitsHeaderParams.get("SIMPLE")));
@@ -50144,12 +49603,12 @@ class MercatorProjection {
             bzero = fitsHeaderParams.get("BZERO");
         }
         this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("BZERO", bzero));
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE1", "'" + this._ctype1 + "'"));
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE2", "'" + this._ctype2 + "'"));
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CDELT1", this._pxsize)); // ??? Pixel spacing along axis 1 ???
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CDELT2", this._pxsize)); // ??? Pixel spacing along axis 2 ???
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRPIX1", this._naxis1 / 2)); // central/reference pixel i along naxis1
-        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRPIX2", this._naxis2 / 2)); // central/reference pixel j along naxis2
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE1", "'" + super.ctype1 + "'"));
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CTYPE2", "'" + super.ctype2 + "'"));
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CDELT1", super.pxsize)); // ??? Pixel spacing along axis 1 ???
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CDELT2", super.pxsize)); // ??? Pixel spacing along axis 2 ???
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRPIX1", super.naxis1 / 2)); // central/reference pixel i along naxis1
+        this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRPIX2", super.naxis2 / 2)); // central/reference pixel j along naxis2
         this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRVAL1", this._craDeg)); // central/reference pixel RA
         this._fitsheader[0].addItem(new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeaderItem("CRVAL2", this._cdecDeg)); // central/reference pixel Dec
         let min = bzero + bscale * this._minphysicalval;
@@ -50178,6 +49637,10 @@ class MercatorProjection {
         return this._fitsUsed;
     }
     getPixValues(inputPixelsList) {
+        const _super = Object.create(null, {
+            naxis2: { get: () => super.naxis2 },
+            naxis1: { get: () => super.naxis1 }
+        });
         return __awaiter(this, void 0, void 0, function* () {
             let promise = new Promise((resolve, reject) => {
                 try {
@@ -50189,8 +49652,8 @@ class MercatorProjection {
                         let imgpx = inputPixelsList[p];
                         // TODO check when input is undefined. atm it puts 0 bur it should be BLANK
                         // TODO why I am getting negative i and j? check world2pix!!!
-                        if ((imgpx._j) < 0 || (imgpx._j) >= this._naxis2 ||
-                            (imgpx._i) < 0 || (imgpx._i) >= this._naxis1) {
+                        if ((imgpx._j) < 0 || (imgpx._j) >= _super.naxis2 ||
+                            (imgpx._i) < 0 || (imgpx._i) >= _super.naxis1) {
                             for (let b = 0; b < bytesXelem; b++) {
                                 values[p * bytesXelem + b] = blankBytes[b];
                             }
@@ -50213,12 +49676,6 @@ class MercatorProjection {
             return promise;
         });
     }
-    computeSquaredNaxes(d, ps) {
-        // first approximation to be checked
-        this._naxis1 = Math.ceil(d / ps);
-        this._naxis2 = this._naxis1;
-        this._pxsize = ps;
-    }
     setPxsValue(values, fitsHeaderParams) {
         let bytesXelem = Math.abs(fitsHeaderParams.get("BITPIX") / 8);
         let minpixb = jsfitsio__WEBPACK_IMPORTED_MODULE_0__.ParseUtils.extractPixelValue(0, values.slice(0, bytesXelem), fitsHeaderParams.get("BITPIX"));
@@ -50232,11 +49689,11 @@ class MercatorProjection {
         //     this._pxvalues[r] = new Uint8Array(this._naxis1 * bytesXelem);
         // }
         // this._pxvalues.set(0, new Uint8Array[this._naxis2][this._naxis1 * bytesXelem]);
-        this._pxvalues.set(0, new Array(this._naxis2));
+        this._pxvalues.set(0, new Array(super.naxis2));
         let pv = this._pxvalues.get(0);
         if (pv !== undefined) {
-            for (let r = 0; r < this._naxis2; r++) {
-                pv[r] = new Uint8Array(this._naxis1 * bytesXelem);
+            for (let r = 0; r < super.naxis2; r++) {
+                pv[r] = new Uint8Array(super.naxis1 * bytesXelem);
             }
             let r;
             let c;
@@ -50244,8 +49701,8 @@ class MercatorProjection {
             for (let p = 0; (p * bytesXelem) < values.length; p++) {
                 // console.log("processing "+p + " of "+ (values.length / bytesXelem));
                 try {
-                    r = Math.floor(p / this._naxis1);
-                    c = (p - r * this._naxis1) * bytesXelem;
+                    r = Math.floor(p / super.naxis1);
+                    c = (p - r * super.naxis1) * bytesXelem;
                     for (b = 0; b < bytesXelem; b++) {
                         pv[r][c + b] = values[p * bytesXelem + b];
                     }
@@ -50271,21 +49728,21 @@ class MercatorProjection {
         return this._pxvalues;
     }
     getImageRADecList(center, radius, pxsize) {
-        this.computeSquaredNaxes(2 * radius, pxsize); // compute naxis[1, 2]
-        this._pxsize = pxsize;
+        super.computeSquaredNaxes(2 * radius, pxsize); // compute naxis[1, 2]
+        super.pxsize = pxsize;
         this._minra = center.astro.raDeg - radius;
         if (this._minra < 0) {
             this._minra += 360;
         }
         this._mindec = center.astro.decDeg - radius;
         let radeclist = new Array();
-        for (let d = 0; d < this._naxis2; d++) {
-            for (let r = 0; r < this._naxis1; r++) {
-                radeclist.push([this._minra + (r * this._pxsize), this._mindec + (d * this._pxsize)]);
+        for (let d = 0; d < super.naxis2; d++) {
+            for (let r = 0; r < super.naxis1; r++) {
+                radeclist.push([this._minra + (r * super.pxsize), this._mindec + (d * super.pxsize)]);
             }
         }
-        let cidx = (this._naxis2 / 2) * this._naxis1 + this._naxis1 / 2;
-        if (this._naxis1 % 2 != 0) {
+        let cidx = (super.naxis2 / 2) * super.naxis1 + super.naxis1 / 2;
+        if (super.naxis1 % 2 != 0) {
             cidx = Math.floor(radeclist.length / 2);
         }
         // let cidx2 = (this._naxis2 / 2 - 1) * this._naxis1 + this._naxis1 / 2;
@@ -50295,56 +49752,18 @@ class MercatorProjection {
         this._cdecDeg = radeclist[cidx][1];
         return radeclist;
     }
-    // getImageRADecList(center: AstroCoords, radius: number, pxsize: number): Promise<number[][]> {
-    //     let promise = new Promise<[]> ( (resolve, reject) => {
-    //         this.computeSquaredNaxes (2 * radius, pxsize); // compute naxis[1, 2]
-    //         this._pxsize = pxsize;
-    //         this._minra = center.raDeg - radius;
-    //         if (this._minra < 0) {
-    //             this._minra += 360;
-    //         }
-    //         this._mindec = center.decDeg - radius;
-    //         let radeclist:number[][] = new Array<Array<number>>();
-    //         for (let d = 0; d < this._naxis2; d++) {
-    //             for (let r = 0; r < this._naxis1; r++) {
-    //                 radeclist.push([ this._minra + (r * this._pxsize), this._mindec + (d * this._pxsize)]);
-    //             }    
-    //         }
-    //         let cidx = (this._naxis2/2 - 1) * this._naxis1 +  this._naxis1/2;
-    //         this._craDeg = radeclist[ cidx ][0];
-    //         this._cdecDeg = radeclist[ cidx ][1];
-    //         resolve(radeclist);
-    //     });
-    //     return promise;
-    // }
     /** TODO !!! check and handle RA passing through 360-0 */
     pix2world(i, j) {
         let ra;
         let dec;
         // ra = i * this._stepra + this._minra;
         // dec = j * this._stepdec + this._mindec;
-        ra = i * this._pxsize + this._minra;
-        dec = j * this._pxsize + this._mindec;
-        let p = new _model_Point_js__WEBPACK_IMPORTED_MODULE_2__.Point(_model_CoordsType_js__WEBPACK_IMPORTED_MODULE_3__.CoordsType.ASTRO, _model_NumberType_js__WEBPACK_IMPORTED_MODULE_4__.NumberType.DEGREES, ra, dec);
+        ra = i * super.pxsize + this._minra;
+        dec = j * super.pxsize + this._mindec;
+        let p = new _model_Point_js__WEBPACK_IMPORTED_MODULE_3__.Point(_model_CoordsType_js__WEBPACK_IMPORTED_MODULE_4__.CoordsType.ASTRO, _model_NumberType_js__WEBPACK_IMPORTED_MODULE_5__.NumberType.DEGREES, ra, dec);
         return p;
         // return [ra, dec];
     }
-    // world2pix (radeclist: number[][]): Promise<ImagePixel[]> {
-    //     let promise = new Promise<ImagePixel[]> ( (resolve, reject) => {
-    //         this.initFromFile(this._infile).then( (data) => {
-    //             let imgpxlist = [];
-    //             for (let radecItem of radeclist) {
-    //                 let ra = radecItem[0];
-    //                 let dec = radecItem[1];
-    //                 let i = Math.floor((ra - this._minra) / this._pxsize1);
-    //                 let j = Math.floor((dec - this._mindec) / this._pxsize2);
-    //                 imgpxlist.push(new ImagePixel(i, j));
-    //             }
-    //             resolve(imgpxlist);
-    //         });
-    //     });
-    //     return promise;
-    // }
     world2pix(radeclist) {
         let imgpxlist = [];
         for (let radecItem of radeclist) {
@@ -50352,9 +49771,9 @@ class MercatorProjection {
             let dec = radecItem[1];
             // let i = Math.floor((ra - this._minra) / this._pxsize1);
             // let j = Math.floor((dec - this._mindec) / this._pxsize2);
-            let i = Math.floor((ra - this._minra) / this._pxsize);
-            let j = Math.floor((dec - this._mindec) / this._pxsize);
-            imgpxlist.push(new _model_ImagePixel_js__WEBPACK_IMPORTED_MODULE_1__.ImagePixel(i, j));
+            let i = Math.floor((ra - this._minra) / super.pxsize);
+            let j = Math.floor((dec - this._mindec) / super.pxsize);
+            imgpxlist.push(new _model_ImagePixel_js__WEBPACK_IMPORTED_MODULE_2__.ImagePixel(i, j));
         }
         return imgpxlist;
     }
@@ -50375,6 +49794,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "TestProj": () => (/* binding */ TestProj)
 /* harmony export */ });
 /* harmony import */ var jsfitsio__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jsfitsio */ "./node_modules/jsfitsio/lib-esm/index.js");
+/* harmony import */ var _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./AbstractProjection.js */ "./node_modules/wcslight/lib-esm/projections/AbstractProjection.js");
 // import { FITSParser } from 'fitsparser/FITSParser-node';
 // import { FITSHeader } from 'fitsparser/model/FITSHeader';
 // import { FITSHeaderItem } from 'fitsparser/model/FITSHeaderItem';
@@ -50382,11 +49802,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-class TestProj {
+
+class TestProj extends _AbstractProjection_js__WEBPACK_IMPORTED_MODULE_1__.AbstractProjection {
     constructor() {
+        super("RA---MER", "DEC--MER");
         this._wcsname = "MER"; // TODO check WCS standard and create ENUM
-        this._ctype1 = "RA---MER";
-        this._ctype2 = "DEC--MER";
         this._pxvalues = new Map();
         const fh = new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSHeader();
         const fp = new jsfitsio__WEBPACK_IMPORTED_MODULE_0__.FITSParser("./notexistent/");
@@ -57260,7 +56680,7 @@ class ControlPanelPresenter{
 	}
 
 	registerForEvents(){
-		_events_EventBus_js__WEBPACK_IMPORTED_MODULE_2__["default"].registerForEvent(this, _events_OpenPanelEvent_js__WEBPACK_IMPORTED_MODULE_3__["default"].name);
+		// eventBus.registerForEvent(this, OpenPanelEvent.name);
 		
 		_events_EventBus_js__WEBPACK_IMPORTED_MODULE_2__["default"].registerForEvent(this, _cataloguepanel_events_CatalogueSettingsEvent_js__WEBPACK_IMPORTED_MODULE_21__["default"].name);
 		_events_EventBus_js__WEBPACK_IMPORTED_MODULE_2__["default"].registerForEvent(this, _cataloguepanel_events_CloseCatalogueSettingsEvent_js__WEBPACK_IMPORTED_MODULE_24__["default"].name);
