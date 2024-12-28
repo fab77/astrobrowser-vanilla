@@ -10,12 +10,12 @@ Easy access and visualisation of sky maps in Hierarchical Progressive Surveys (H
 
 - Clone repo:
 ```
-git clone https://github.com/fab77/astrobrowser.git
+git clone https://github.com/fab77/astrobrowser-vanilla.git
 ```
 
-- Move into the astrobrowser folder:
+- Move into the astrobrowser-vanilla folder:
 ```
-cd astrobrowser
+cd astrobrowser-vanilla
 ```
 
 - Install the required `dev` module:
