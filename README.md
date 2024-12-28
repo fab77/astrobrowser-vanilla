@@ -1,11 +1,11 @@
 # AstroBrowser
 
-Easy access to sky maps in Hierarchical Progressive Surveys (HiPS) format
+Easy access and visualisation of sky maps in Hierarchical Progressive Surveys (HiPS) format. It supports overlay of source catalogues and observation footprints generated from data of a wide range of astronomy missions onto HiPS maps.
 
 ## Instalation
 
 - Prerequisites:
-  [Node.js](https://nodejs.org)
+  [Node.js](https://nodejs.org) v<=16
   (see [installation instructions](https://nodejs.org/en/download/package-manager))
 
 - Clone repo:
