@@ -62,7 +62,7 @@ class ShaderManager {
 				#endif
 
 				mycolor = color0;
-				finalColor = vec3(finalColor.x +  mycolor.x *uFactor0 ,finalColor.y +  mycolor.y*uFactor0,finalColor.z +  mycolor.z*uFactor0); 
+				finalColor = vec3(mycolor.x *uFactor0, mycolor.y*uFactor0, mycolor.z*uFactor0); 
 			} else if (uFactor7 >= 0.0){
 				finalColor = vec3(1.0, 0.0, 0.0);
 			}
