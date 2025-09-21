@@ -52,7 +52,7 @@
     "healpixjs": "^1.0.3",
     "helmet": "^6.0.1",
     "jquery": "^3.6.1",
-    "jsfitsio": "file://../FITSParser",
+    "jsfitsio": "file://../jsfitsio",
     "koa": "^2.13.4",
     "koa-cors": "^0.0.16",
     "koa-proxy": "^1.0.0-alpha.3",

@@ -137,7 +137,7 @@ class DEPresenter {
 		this._raDeg = raDeg;
 		this._decDeg = decDeg;
 		this._radius = radius;
-		this._projection = WCSLight.getProjection(projectionName);
+		// this._projection = WCSLight.getProjection(projectionName);
 		this._ctrlView.setModel(this._pxSize, this._raDeg, this._decDeg, this._radius, projectionName);
 		this._fitsURL = fitsURL;
 	}
@@ -156,23 +156,25 @@ class DEPresenter {
 		// let hipsBaseUri = "https://skies.esac.esa.int/Herschel/normalized/PACS_hips160/";
 		let hipsBaseUri = this._fitsURL;
 
-		let inproj = new HiPSProjection();
+		// let inproj = new HiPSProjection();
 		
-		inproj.parsePropertiesFile(hipsBaseUri).then(async propFile => {
+		// inproj.parsePropertiesFile(hipsBaseUri).then(async propFile => {
 
-			inproj.initFromHiPSLocationAndPxSize(hipsBaseUri, pxsize)
+			// inproj.initFromHiPSLocationAndPxSize(hipsBaseUri, pxsize)
 			let outproj = new MercatorProjection();
 			let canvasPresenter = this._canvasPresenter;
 			let tbarPresenter = this._tbarPresenter;
 			let dePresenter = this;
 
-			WCSLight.cutout(center, radius, pxsize, inproj, outproj).then((result) => {
+			// WCSLight.cutout(center, radius, pxsize, inproj, outproj).then((result) => {
+			WCSLight.hipsCutoutToFITS(center, radius, pxsize, hipsBaseUri, outproj).then((result) => {
 				if (result.fitsused.length > 0){
 					dePresenter._model = result;
-					dePresenter._canvas2d = new Canvas2D(result.fitsdata, result.fitsheader, result.outproj);
+					// dePresenter._canvas2d = new Canvas2D(result.fitsdata, result.fitsheader, result.outproj);
+					dePresenter._canvas2d = new Canvas2D(result.fits.payload, result.fits.header, result.outproj);
 					let img = dePresenter._canvas2d.getBrowseImage();
 	
-					tbarPresenter.setModel(dePresenter._model, img);
+					tbarPresenter.setModel(dePresenter._model.fits, img);
 					canvasPresenter.refreshModel(img);
 					dePresenter.setImageListener();
 					_self._canvasPresenter.showLoading(false);
@@ -187,7 +189,7 @@ class DEPresenter {
 			// 	_self._canvasPresenter.showLoading(false);
 			// });
 
-		});
+		// });
 
 
 

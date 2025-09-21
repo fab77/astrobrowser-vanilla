@@ -29,10 +29,10 @@ class ToolbarPanelPresenter {
             refreshImage: (img)=>{
 				self._img = img;
 			},
-            setModel: (fitsdata, img)=>{
-                self._fitsdata = fitsdata;
+            setModel: (fits, img)=>{
+                self._fitsdata = fits;
                 self._img = img;
-                let url = self.generateFITSUrl();
+                const url = self.generateFITSUrl();
                 self._view.setDownloadFits(url);
 			},
             saveFITS: ()=> {
@@ -97,9 +97,11 @@ class ToolbarPanelPresenter {
 	}
 
     generateFITSUrl(){
-        let fw = new FITSWriter();
-        fw.run(this._fitsdata.fitsheader[0], this._fitsdata.fitsdata.get(0));
-        return fw.typedArrayToURL();
+        // let fw = new FITSWriter();
+        // fw.run(this._fitsdata.fitsheader[0], this._fitsdata.fitsdata.get(0));
+        // fw.run(this._fitsdata.header, this._fitsdata.payload);
+        // return fw.typedArrayToURL();
+        return FITSWriter.typedArrayToURL({"header": this._fitsdata.header, "data": this._fitsdata.payload});
     }
 
 	exportImage(event) {

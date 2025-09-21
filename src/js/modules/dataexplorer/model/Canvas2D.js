@@ -41,27 +41,35 @@ class Canvas2D {
         this._orig_tfunction = tfunction;
         this._orig_colormap = colormap;
         this._orig_inverse = inverse;
-        this._orig_min = fitsheader[0].get("DATAMIN");
-        this._orig_max = fitsheader[0].get("DATAMAX");
+        // this._orig_min = fitsheader[0].get("DATAMIN");
+        // this._orig_max = fitsheader[0].get("DATAMAX");
+        this._orig_min = fitsheader.findById("DATAMIN").value;
+        this._orig_max = fitsheader.findById("DATAMAX").value;
 
         this._currmin = this._orig_min;
         this._currmax = this._orig_max;
 
-        this._bzero = fitsheader[0].get("BZERO") || 0.0;
-        this._bscale = fitsheader[0].get("BSCALE") || 1.0;
-        this._blank = fitsheader[0].get("BLANK");
-        this._bitpix = fitsheader[0].get("BITPIX");
+        // this._bzero = fitsheader[0].get("BZERO") || 0.0;
+        // this._bscale = fitsheader[0].get("BSCALE") || 1.0;
+        // this._blank = fitsheader[0].get("BLANK");
+        // this._bitpix = fitsheader[0].get("BITPIX");
+        this._bzero = fitsheader.findById("BZERO").value || 0.0;
+        this._bscale = fitsheader.findById("BSCALE").value || 1.0;
+        this._blank = fitsheader.findById("BLANK").value;
+        this._bitpix = fitsheader.findById("BITPIX").value;
 
         let bytesXelem = Math.abs(this._bitpix / 8);
-        // this._width = pixelvalues[0].length / bytesXelem;
-        this._width = pixelvalues.get(0)[0].length  / bytesXelem;
         
+        // this._width = pixelvalues.length  / bytesXelem;
+        // this._width = pixelvalues.get(0)[0].length  / bytesXelem;
+        this._width = Math.sqrt(pixelvalues.length)
+        this._height = this._width;
         // this._height = pixelvalues.length;
-        this._height = pixelvalues.get(0).length;
+        // this._height = pixelvalues.get(0).length;
 
         this._physicalvalues = [];
-        // this._pixelvalues = pixelvalues;
-        this._pixelvalues = pixelvalues.get(0);
+        this._pixelvalues = pixelvalues;
+        // this._pixelvalues = pixelvalues.get(0);
         this._RGBvalues = [];
 
         this._inverse = inverse;
