@@ -57,13 +57,16 @@ class Canvas2D {
         this._bscale = fitsheader.findById("BSCALE").value || 1.0;
         this._blank = fitsheader.findById("BLANK").value;
         this._bitpix = fitsheader.findById("BITPIX").value;
+        
+        this._width = fitsheader.findById("NAXIS1").value;
+        this._height = fitsheader.findById("NAXIS2").value;
 
-        let bytesXelem = Math.abs(this._bitpix / 8);
+        const bytesXelem = Math.abs(this._bitpix / 8);
         
         // this._width = pixelvalues.length  / bytesXelem;
         // this._width = pixelvalues.get(0)[0].length  / bytesXelem;
-        this._width = Math.sqrt(pixelvalues.length)
-        this._height = this._width;
+        // this._width = Math.sqrt(pixelvalues.length)
+        // this._height = this._width;
         // this._height = pixelvalues.length;
         // this._height = pixelvalues.get(0).length;
 
@@ -85,10 +88,14 @@ class Canvas2D {
         this.applyColorAndTransferFunction();
     }
 
+    getCanvasObject() {
+        return this._canvas;
+    }
+
     initRGBImage() {
         /** https://flaviocopes.com/canvas-node-generate-image/ */
-        let width = this._width;
-        let height = this._height;
+        const width = this._width;
+        const height = this._height;
         this._canvas = createCanvas(width, height)
         this._canvasCtx = this._canvas.getContext('2d')
 
@@ -165,13 +172,15 @@ class Canvas2D {
         // this._origmin = undefined;
         // this._origmax = undefined;
 
+        let idx = 0
         for (let j = 0; j < this._height; j++) {
             this._physicalvalues[j] = new Array(this._width);
             for (let i = 0; i < this._width; i++) {
                 let val;
                 // let rgbval;
-                let pixval = ParseUtils.extractPixelValue(0, this._pixelvalues[j].slice(i * bytesXelem, (i + 1) * bytesXelem), this._bitpix);
-
+                // let pixval = ParseUtils.extractPixelValue(0, this._pixelvalues[j].slice(i * bytesXelem, (i + 1) * bytesXelem), this._bitpix);
+                let pixval = ParseUtils.extractPixelValue(0, this._pixelvalues[idx], this._bitpix);
+                idx++
                 // let rgbpos = ( (this._width - j) * this._width + i ) * 4;
 
 
@@ -414,12 +423,12 @@ class Canvas2D {
         return this._physicalvalues[cy][cx];
     }
 
-    getRaDecByCanvasCoords(cx, cy) {
+    getRaDecByCanvasCoords(cx, cy, pxsize, minra, mindec) {
         // let [i, j] = this.canvasxy2ij(cx, cy);
         // return this.getRaDecByPixelCoords(i, j);
         let i = cx;
         let j = cy;
-        return this._projection.pix2world(i, j);
+        return this._projection.pix2world(i, j, pxsize, minra, mindec);
     }
 
     getRaDecByPixelCoords(i, j) {

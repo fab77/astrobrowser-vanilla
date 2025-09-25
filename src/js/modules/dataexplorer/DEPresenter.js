@@ -168,13 +168,21 @@ class DEPresenter {
 
 			// WCSLight.cutout(center, radius, pxsize, inproj, outproj).then((result) => {
 			WCSLight.hipsCutoutToFITS(center, radius, pxsize, hipsBaseUri, outproj).then((result) => {
+				if (result === null) {
+					_self._canvasPresenter.showNoDataFound();
+					return;
+				}
+				console.log("Cutout result:");
+				console.log(result);
 				if (result.fitsused.length > 0){
 					dePresenter._model = result;
 					// dePresenter._canvas2d = new Canvas2D(result.fitsdata, result.fitsheader, result.outproj);
-					dePresenter._canvas2d = new Canvas2D(result.fits.payload, result.fits.header, result.outproj);
-					let img = dePresenter._canvas2d.getBrowseImage();
+					dePresenter._canvas2d = new Canvas2D(result.fits.payload, result.fits.header, result.projection);
+					const img = dePresenter._canvas2d.getBrowseImage();
+
+					const canvas = dePresenter._canvas2d.getCanvasObject()
 	
-					tbarPresenter.setModel(dePresenter._model.fits, img);
+					tbarPresenter.setModel(dePresenter._model.fits, img, canvas);
 					canvasPresenter.refreshModel(img);
 					dePresenter.setImageListener();
 					_self._canvasPresenter.showLoading(false);
@@ -211,7 +219,7 @@ class DEPresenter {
 
 			if (x <= imgWidth && y <= imgHeight && x > 0 && y > 0) {
 				let p_value = dePresenter._canvas2d.getValueByCanvasCoords(x - 1, y - 1);
-				let p_coord = dePresenter._canvas2d.getRaDecByCanvasCoords(x - 1, y - 1);
+				let p_coord = dePresenter._canvas2d.getRaDecByCanvasCoords(x - 1, y - 1, dePresenter._model.pxsize, dePresenter._model.raDecMinMaxCentral.minRA, dePresenter._model.raDecMinMaxCentral.minDec);
 				dePresenter._ctrlPresenter.refreshPixelDetails(p_value, x, y, p_coord);
 
 			}

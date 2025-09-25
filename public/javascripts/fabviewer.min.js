@@ -57989,13 +57989,21 @@ class DEPresenter {
 
 			// WCSLight.cutout(center, radius, pxsize, inproj, outproj).then((result) => {
 			wcslight__WEBPACK_IMPORTED_MODULE_1__.WCSLight.hipsCutoutToFITS(center, radius, pxsize, hipsBaseUri, outproj).then((result) => {
+				if (result === null) {
+					_self._canvasPresenter.showNoDataFound();
+					return;
+				}
+				console.log("Cutout result:");
+				console.log(result);
 				if (result.fitsused.length > 0){
 					dePresenter._model = result;
 					// dePresenter._canvas2d = new Canvas2D(result.fitsdata, result.fitsheader, result.outproj);
-					dePresenter._canvas2d = new _model_Canvas2D_js__WEBPACK_IMPORTED_MODULE_4__["default"](result.fits.payload, result.fits.header, result.outproj);
-					let img = dePresenter._canvas2d.getBrowseImage();
+					dePresenter._canvas2d = new _model_Canvas2D_js__WEBPACK_IMPORTED_MODULE_4__["default"](result.fits.payload, result.fits.header, result.projection);
+					const img = dePresenter._canvas2d.getBrowseImage();
+
+					const canvas = dePresenter._canvas2d.getCanvasObject()
 	
-					tbarPresenter.setModel(dePresenter._model.fits, img);
+					tbarPresenter.setModel(dePresenter._model.fits, img, canvas);
 					canvasPresenter.refreshModel(img);
 					dePresenter.setImageListener();
 					_self._canvasPresenter.showLoading(false);
@@ -58032,7 +58040,7 @@ class DEPresenter {
 
 			if (x <= imgWidth && y <= imgHeight && x > 0 && y > 0) {
 				let p_value = dePresenter._canvas2d.getValueByCanvasCoords(x - 1, y - 1);
-				let p_coord = dePresenter._canvas2d.getRaDecByCanvasCoords(x - 1, y - 1);
+				let p_coord = dePresenter._canvas2d.getRaDecByCanvasCoords(x - 1, y - 1, dePresenter._model.pxsize, dePresenter._model.raDecMinMaxCentral.minRA, dePresenter._model.raDecMinMaxCentral.minDec);
 				dePresenter._ctrlPresenter.refreshPixelDetails(p_value, x, y, p_coord);
 
 			}
@@ -58835,13 +58843,16 @@ class Canvas2D {
         this._bscale = fitsheader.findById("BSCALE").value || 1.0;
         this._blank = fitsheader.findById("BLANK").value;
         this._bitpix = fitsheader.findById("BITPIX").value;
+        
+        this._width = fitsheader.findById("NAXIS1").value;
+        this._height = fitsheader.findById("NAXIS2").value;
 
-        let bytesXelem = Math.abs(this._bitpix / 8);
+        const bytesXelem = Math.abs(this._bitpix / 8);
         
         // this._width = pixelvalues.length  / bytesXelem;
         // this._width = pixelvalues.get(0)[0].length  / bytesXelem;
-        this._width = Math.sqrt(pixelvalues.length)
-        this._height = this._width;
+        // this._width = Math.sqrt(pixelvalues.length)
+        // this._height = this._width;
         // this._height = pixelvalues.length;
         // this._height = pixelvalues.get(0).length;
 
@@ -58863,10 +58874,14 @@ class Canvas2D {
         this.applyColorAndTransferFunction();
     }
 
+    getCanvasObject() {
+        return this._canvas;
+    }
+
     initRGBImage() {
         /** https://flaviocopes.com/canvas-node-generate-image/ */
-        let width = this._width;
-        let height = this._height;
+        const width = this._width;
+        const height = this._height;
         this._canvas = createCanvas(width, height)
         this._canvasCtx = this._canvas.getContext('2d')
 
@@ -58943,13 +58958,15 @@ class Canvas2D {
         // this._origmin = undefined;
         // this._origmax = undefined;
 
+        let idx = 0
         for (let j = 0; j < this._height; j++) {
             this._physicalvalues[j] = new Array(this._width);
             for (let i = 0; i < this._width; i++) {
                 let val;
                 // let rgbval;
-                let pixval = jsfitsio__WEBPACK_IMPORTED_MODULE_3__.ParseUtils.extractPixelValue(0, this._pixelvalues[j].slice(i * bytesXelem, (i + 1) * bytesXelem), this._bitpix);
-
+                // let pixval = ParseUtils.extractPixelValue(0, this._pixelvalues[j].slice(i * bytesXelem, (i + 1) * bytesXelem), this._bitpix);
+                let pixval = jsfitsio__WEBPACK_IMPORTED_MODULE_3__.ParseUtils.extractPixelValue(0, this._pixelvalues[idx], this._bitpix);
+                idx++
                 // let rgbpos = ( (this._width - j) * this._width + i ) * 4;
 
 
@@ -59192,12 +59209,12 @@ class Canvas2D {
         return this._physicalvalues[cy][cx];
     }
 
-    getRaDecByCanvasCoords(cx, cy) {
+    getRaDecByCanvasCoords(cx, cy, pxsize, minra, mindec) {
         // let [i, j] = this.canvasxy2ij(cx, cy);
         // return this.getRaDecByPixelCoords(i, j);
         let i = cx;
         let j = cy;
-        return this._projection.pix2world(i, j);
+        return this._projection.pix2world(i, j, pxsize, minra, mindec);
     }
 
     getRaDecByPixelCoords(i, j) {
@@ -59484,103 +59501,137 @@ class ToolbarPanelPresenter {
     _img;
 
     // TODO check where to pass the FITS and the IMAGE
-    constructor(in_view){
+    constructor(in_view) {
 
-		this._view = in_view;
-		let self  = this;
+        this._view = in_view;
+        let self = this;
 
-		var _public = {
+        var _public = {
 
-			refreshModel: (fitsdata, img)=>{
-				self.setModel(fitsdata, img);
-			},
-            refreshImage: (img)=>{
-				self._img = img;
-			},
-            setModel: (fits, img)=>{
+            refreshModel: (fitsdata, img) => {
+                self.setModel(fitsdata, img);
+            },
+            refreshImage: (img) => {
+                self._img = img;
+            },
+            setModel: (fits, img, canvas) => {
                 self._fitsdata = fits;
                 self._img = img;
+                self._canvas = canvas
                 const url = self.generateFITSUrl();
                 self._view.setDownloadFits(url);
-			},
-            saveFITS: ()=> {
+            },
+            saveFITS: () => {
                 // TODO implement save method
                 console.log("SAVE FITS");
                 this.exportFITS();
             },
-            saveImage: ()=>{
+            saveImage: () => {
                 // TODO implement save method
                 console.log("SAVE IMAGE");
                 this.exportImage();
             },
-            showFITSHeader: ()=>{
+            showFITSHeader: () => {
                 // TODO this must call the view
                 console.log("SHOW FITS HEADER");
                 this.showFITSHeader();
             },
-			toggle: ()=> {
-				self._view.toggle();
-			},
-			close: ()=> {
-				self._view.close();
-			}
-		}
+            toggle: () => {
+                self._view.toggle();
+            },
+            close: () => {
+                self._view.close();
+            }
+        }
         this.addButtonsClickHandlers();
-		return _public;
-	}
+        return _public;
+    }
 
     addButtonsClickHandlers() {
 
-        this._view.fitsHeaderButton().on("click", {caller: this}, this.showFITSHeader);
-		// this._view.fitsExportButton().on("click", {caller: this}, this.exportFITS);
-		this._view.imageExportButton().on("click", {caller: this}, this.exportImage);
+        this._view.fitsHeaderButton().on("click", { caller: this }, this.showFITSHeader);
+        // this._view.fitsExportButton().on("click", {caller: this}, this.exportFITS);
+        this._view.imageExportButton().on("click", { caller: this }, this.exportImage);
 
-        this._view.closeDataExplorerButton().on("click", {caller: this}, function() {
+        this._view.closeDataExplorerButton().on("click", { caller: this }, function () {
             _events_EventBus_js__WEBPACK_IMPORTED_MODULE_0__["default"].fireEvent(new _events_OpenPanelEvent_js__WEBPACK_IMPORTED_MODULE_1__["default"]("DataExplorer"));
         });
-		
+
+        this._view.fitsExportButton().on("click", { caller: this }, this.exportFITS);
+
     }
 
-	showFITSHeader(event) {
+    showFITSHeader(event) {
         console.log("clicked on showFITSHeader");
 
         event.data.caller._view.toggleFITSPanel();
 
-        
 
-        console.log(event.data.caller._fitsdata.fitsheader);
+
+        console.log(event.data.caller._fitsdata.header);
         // TODO update view
-        event.data.caller._view.fillFitsHeaderPopup(event.data.caller._fitsdata.fitsheader[0]);
+        event.data.caller._view.fillFitsHeaderPopup(event.data.caller._fitsdata.header.getItems());
     }
 
-	exportFITS(event) {
+    exportImage(event) {
         console.log("clicked on exportFITS");
         console.log(event.data.caller._fitsdata);
         // let fw = new FITSWriter();
         // fw.run(event.data.caller._fitsdata.fitsheader, event.data.caller._fitsdata.fitsdata);
         // fw.typedArrayToURL();
-		// TODO save the file
+        // TODO save the file
         // possible solution <a href="path_to_file" download="proposed_file_name"><button>export fits</button></a>
 
-	}
+        const canvas = event.data.caller._canvas
+        canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'image.png';            // ← desired filename
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            // Revoke after the click so the browser had time to start the download
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }, 'image/png');
+    }
 
-    generateFITSUrl(){
+
+    exportFITS(event) {
+        console.log("clicked on exportImage");
+        console.log(event.data.caller._img);
+        // TODO save the file
+
+        const fitsParsed = {
+            header: event.data.caller._fitsdata.header,
+            data: event.data.caller._fitsdata.payload
+        }
+        const fitsFile = jsfitsio__WEBPACK_IMPORTED_MODULE_2__.FITSWriter.createFITS(fitsParsed);
+        const blob = new Blob([fitsFile], { type: "application/fits" });
+        // console.log(`<html><body><img src='${URL.createObjectURL(b)}'</body></html>`);
+        const url = URL.createObjectURL(blob);
+        console.log(`Generated FITS file URL: ${url}`);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'image.fits';   // your filename
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    generateFITSUrl() {
         // let fw = new FITSWriter();
         // fw.run(this._fitsdata.fitsheader[0], this._fitsdata.fitsdata.get(0));
         // fw.run(this._fitsdata.header, this._fitsdata.payload);
         // return fw.typedArrayToURL();
-        return jsfitsio__WEBPACK_IMPORTED_MODULE_2__.FITSWriter.typedArrayToURL({"header": this._fitsdata.header, "data": this._fitsdata.payload});
+       // return FITSWriter.typedArrayToURL({"header": this._fitsdata.header, "data": this._fitsdata.payload});
     }
 
-	exportImage(event) {
-        console.log("clicked on exportImage");
-        console.log(event.data.caller._img);
-		// TODO save the file
-	}
-
-    get view(){
-		return this._view;
-	}
+    get view() {
+        return this._view;
+    }
 
 }
 
@@ -59642,12 +59693,15 @@ class ToolbarPanelView {
             closeFITSHeaderButton: () => {
                 return jquery__WEBPACK_IMPORTED_MODULE_0__("#de_fits_header_popup_close")
             },
-            fillFitsHeaderPopup: (header) => {
+            fillFitsHeaderPopup: (headerItemList) => {
                 let str = "";
 
                 str += " <div id='de_fits_header_popup_top'><button class='button' id='de_fits_header_popup_close'>x</button></div>";
-                header.forEach((value, key) => {
-                    str += key + ": " + value + "<br>";
+                // header.forEach((value, key) => {
+                //     str += key + ": " + value + "<br>";
+                // });
+                headerItemList.forEach((item) => {
+                    str += item.key + ": " + item.value + "<br>";
                 });
                 // $("#de_fits_header_popup").text(str);
                 jquery__WEBPACK_IMPORTED_MODULE_0__("#de_fits_header_popup").html(str);
@@ -59728,7 +59782,8 @@ class ToolbarPanelView {
         this._headerPanelVisible = false;
         this._html = jquery__WEBPACK_IMPORTED_MODULE_0__(
             "<button class='button' id='de_show_fits_header'>FITS header</button> &nbsp; "
-            + " <a href='' id='test' download='fabviewer.fits'><button class='button' id='de_save_fits'>export FITS</button></a> &nbsp; "
+            // + " <a href='' id='test' download='fabviewer.fits'><button class='button' id='de_save_fits'>export FITS</button></a> &nbsp; "
+            + " <a href='' id='test'><button class='button' id='de_save_fits'>export FITS</button></a> &nbsp; "
             + " <button class='button' id='de_save_png'>export PNG</button>"
             + "<button class='button' id='de_view_close'>x</button></div>"
             + " <div id='de_fits_header_popup'>"
@@ -64907,17 +64962,14 @@ class FITSWriter {
         }
         return dataBytes;
     }
-    static typedArrayToURL(fitsParsed) {
-        const fitsFile = this.createFITS(fitsParsed);
-        const blob = new Blob([fitsFile], { type: "application/fits" });
-        // console.log(`<html><body><img src='${URL.createObjectURL(b)}'</body></html>`);
-        const url = URL.createObjectURL(blob);
-        console.log(`Generated FITS file URL: ${url}`);
-        const revokeTimeout_sec = 10;
-        setTimeout(() => url, revokeTimeout_sec * 1000);
-        console.log(`Generated FITS will be available for ${revokeTimeout_sec} seconds: ${url}`);
-        return url;
-    }
+    // static typedArrayToURL(fitsParsed: FITSParsed): string {
+    //   const fitsFile = FITSWriter.createFITS(fitsParsed) as Uint8Array;
+    //   const blob = new Blob([fitsFile], { type: "application/fits" });
+    //   // console.log(`<html><body><img src='${URL.createObjectURL(b)}'</body></html>`);
+    //   const url = URL.createObjectURL(blob);
+    //   console.log(`Generated FITS file URL: ${url}`);
+    //   return url;
+    // }
     static writeFITSFile(fitsParsed, filePath) {
         const fitsFile = this.createFITS(fitsParsed);
         try {
@@ -65124,43 +65176,28 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /******/ var __webpack_modules__ = ({
 
-/***/ 945:
-/***/ ((module, exports, __nested_webpack_require_75__) => {
+/***/ 545:
+/***/ (function(module, exports) {
 
-// Save global object in a variable
-var __global__ =
-(typeof globalThis !== 'undefined' && globalThis) ||
-(typeof self !== 'undefined' && self) ||
-(typeof __nested_webpack_require_75__.g !== 'undefined' && __nested_webpack_require_75__.g);
-// Create an object that extends from __global__ without the fetch function
-var __globalThis__ = (function () {
+var global = typeof self !== 'undefined' ? self : this;
+var __self__ = (function () {
 function F() {
 this.fetch = false;
-this.DOMException = __global__.DOMException
+this.DOMException = global.DOMException
 }
-F.prototype = __global__; // Needed for feature detection on whatwg-fetch's code
+F.prototype = global;
 return new F();
 })();
-// Wraps whatwg-fetch with a function scope to hijack the global object
-// "globalThis" that's going to be patched
-(function(globalThis) {
+(function(self) {
 
 var irrelevant = (function (exports) {
 
-  /* eslint-disable no-prototype-builtins */
-  var g =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof self !== 'undefined' && self) ||
-    // eslint-disable-next-line no-undef
-    (typeof __nested_webpack_require_75__.g !== 'undefined' && __nested_webpack_require_75__.g) ||
-    {};
-
   var support = {
-    searchParams: 'URLSearchParams' in g,
-    iterable: 'Symbol' in g && 'iterator' in Symbol,
+    searchParams: 'URLSearchParams' in self,
+    iterable: 'Symbol' in self && 'iterator' in Symbol,
     blob:
-      'FileReader' in g &&
-      'Blob' in g &&
+      'FileReader' in self &&
+      'Blob' in self &&
       (function() {
         try {
           new Blob();
@@ -65169,8 +65206,8 @@ var irrelevant = (function (exports) {
           return false
         }
       })(),
-    formData: 'FormData' in g,
-    arrayBuffer: 'ArrayBuffer' in g
+    formData: 'FormData' in self,
+    arrayBuffer: 'ArrayBuffer' in self
   };
 
   function isDataView(obj) {
@@ -65201,8 +65238,8 @@ var irrelevant = (function (exports) {
     if (typeof name !== 'string') {
       name = String(name);
     }
-    if (/[^a-z0-9\-#$%&'*+.^_`|~!]/i.test(name) || name === '') {
-      throw new TypeError('Invalid character in header field name: "' + name + '"')
+    if (/[^a-z0-9\-#$%&'*+.^_`|~]/i.test(name)) {
+      throw new TypeError('Invalid character in header field name')
     }
     return name.toLowerCase()
   }
@@ -65241,9 +65278,6 @@ var irrelevant = (function (exports) {
       }, this);
     } else if (Array.isArray(headers)) {
       headers.forEach(function(header) {
-        if (header.length != 2) {
-          throw new TypeError('Headers constructor: expected name/value pair to be length 2, found' + header.length)
-        }
         this.append(header[0], header[1]);
       }, this);
     } else if (headers) {
@@ -65314,7 +65348,6 @@ var irrelevant = (function (exports) {
   }
 
   function consumed(body) {
-    if (body._noBody) return
     if (body.bodyUsed) {
       return Promise.reject(new TypeError('Already read'))
     }
@@ -65342,9 +65375,7 @@ var irrelevant = (function (exports) {
   function readBlobAsText(blob) {
     var reader = new FileReader();
     var promise = fileReaderReady(reader);
-    var match = /charset=([A-Za-z0-9_-]+)/.exec(blob.type);
-    var encoding = match ? match[1] : 'utf-8';
-    reader.readAsText(blob, encoding);
+    reader.readAsText(blob);
     return promise
   }
 
@@ -65372,21 +65403,8 @@ var irrelevant = (function (exports) {
     this.bodyUsed = false;
 
     this._initBody = function(body) {
-      /*
-        fetch-mock wraps the Response object in an ES6 Proxy to
-        provide useful test harness features such as flush. However, on
-        ES5 browsers without fetch or Proxy support pollyfills must be used;
-        the proxy-pollyfill is unable to proxy an attribute unless it exists
-        on the object before the Proxy is created. This change ensures
-        Response.bodyUsed exists on the instance, while maintaining the
-        semantic of setting Request.bodyUsed in the constructor before
-        _initBody is called.
-      */
-      // eslint-disable-next-line no-self-assign
-      this.bodyUsed = this.bodyUsed;
       this._bodyInit = body;
       if (!body) {
-        this._noBody = true;
         this._bodyText = '';
       } else if (typeof body === 'string') {
         this._bodyText = body;
@@ -65434,29 +65452,15 @@ var irrelevant = (function (exports) {
           return Promise.resolve(new Blob([this._bodyText]))
         }
       };
-    }
 
-    this.arrayBuffer = function() {
-      if (this._bodyArrayBuffer) {
-        var isConsumed = consumed(this);
-        if (isConsumed) {
-          return isConsumed
-        } else if (ArrayBuffer.isView(this._bodyArrayBuffer)) {
-          return Promise.resolve(
-            this._bodyArrayBuffer.buffer.slice(
-              this._bodyArrayBuffer.byteOffset,
-              this._bodyArrayBuffer.byteOffset + this._bodyArrayBuffer.byteLength
-            )
-          )
+      this.arrayBuffer = function() {
+        if (this._bodyArrayBuffer) {
+          return consumed(this) || Promise.resolve(this._bodyArrayBuffer)
         } else {
-          return Promise.resolve(this._bodyArrayBuffer)
+          return this.blob().then(readBlobAsArrayBuffer)
         }
-      } else if (support.blob) {
-        return this.blob().then(readBlobAsArrayBuffer)
-      } else {
-        throw new Error('could not read as ArrayBuffer')
-      }
-    };
+      };
+    }
 
     this.text = function() {
       var rejected = consumed(this);
@@ -65489,7 +65493,7 @@ var irrelevant = (function (exports) {
   }
 
   // HTTP methods whose capitalization should be normalized
-  var methods = ['CONNECT', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE'];
+  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT'];
 
   function normalizeMethod(method) {
     var upcased = method.toUpperCase();
@@ -65497,10 +65501,6 @@ var irrelevant = (function (exports) {
   }
 
   function Request(input, options) {
-    if (!(this instanceof Request)) {
-      throw new TypeError('Please use the "new" operator, this DOM object constructor cannot be called as a function.')
-    }
-
     options = options || {};
     var body = options.body;
 
@@ -65530,33 +65530,13 @@ var irrelevant = (function (exports) {
     }
     this.method = normalizeMethod(options.method || this.method || 'GET');
     this.mode = options.mode || this.mode || null;
-    this.signal = options.signal || this.signal || (function () {
-      if ('AbortController' in g) {
-        var ctrl = new AbortController();
-        return ctrl.signal;
-      }
-    }());
+    this.signal = options.signal || this.signal;
     this.referrer = null;
 
     if ((this.method === 'GET' || this.method === 'HEAD') && body) {
       throw new TypeError('Body not allowed for GET or HEAD requests')
     }
     this._initBody(body);
-
-    if (this.method === 'GET' || this.method === 'HEAD') {
-      if (options.cache === 'no-store' || options.cache === 'no-cache') {
-        // Search for a '_' parameter in the query string
-        var reParamSearch = /([?&])_=[^&]*/;
-        if (reParamSearch.test(this.url)) {
-          // If it already exists then set the value with the current time
-          this.url = this.url.replace(reParamSearch, '$1_=' + new Date().getTime());
-        } else {
-          // Otherwise add a new '_' parameter to the end with the current time
-          var reQueryString = /\?/;
-          this.url += (reQueryString.test(this.url) ? '&' : '?') + '_=' + new Date().getTime();
-        }
-      }
-    }
   }
 
   Request.prototype.clone = function() {
@@ -65584,46 +65564,28 @@ var irrelevant = (function (exports) {
     // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
     // https://tools.ietf.org/html/rfc7230#section-3.2
     var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ');
-    // Avoiding split via regex to work around a common IE11 bug with the core-js 3.6.0 regex polyfill
-    // https://github.com/github/fetch/issues/748
-    // https://github.com/zloirock/core-js/issues/751
-    preProcessedHeaders
-      .split('\r')
-      .map(function(header) {
-        return header.indexOf('\n') === 0 ? header.substr(1, header.length) : header
-      })
-      .forEach(function(line) {
-        var parts = line.split(':');
-        var key = parts.shift().trim();
-        if (key) {
-          var value = parts.join(':').trim();
-          try {
-            headers.append(key, value);
-          } catch (error) {
-            console.warn('Response ' + error.message);
-          }
-        }
-      });
+    preProcessedHeaders.split(/\r?\n/).forEach(function(line) {
+      var parts = line.split(':');
+      var key = parts.shift().trim();
+      if (key) {
+        var value = parts.join(':').trim();
+        headers.append(key, value);
+      }
+    });
     return headers
   }
 
   Body.call(Request.prototype);
 
   function Response(bodyInit, options) {
-    if (!(this instanceof Response)) {
-      throw new TypeError('Please use the "new" operator, this DOM object constructor cannot be called as a function.')
-    }
     if (!options) {
       options = {};
     }
 
     this.type = 'default';
     this.status = options.status === undefined ? 200 : options.status;
-    if (this.status < 200 || this.status > 599) {
-      throw new RangeError("Failed to construct 'Response': The status provided (0) is outside the range [200, 599].")
-    }
     this.ok = this.status >= 200 && this.status < 300;
-    this.statusText = options.statusText === undefined ? '' : '' + options.statusText;
+    this.statusText = 'statusText' in options ? options.statusText : 'OK';
     this.headers = new Headers(options.headers);
     this.url = options.url || '';
     this._initBody(bodyInit);
@@ -65641,9 +65603,7 @@ var irrelevant = (function (exports) {
   };
 
   Response.error = function() {
-    var response = new Response(null, {status: 200, statusText: ''});
-    response.ok = false;
-    response.status = 0;
+    var response = new Response(null, {status: 0, statusText: ''});
     response.type = 'error';
     return response
   };
@@ -65658,7 +65618,7 @@ var irrelevant = (function (exports) {
     return new Response(null, {status: status, headers: {location: url}})
   };
 
-  exports.DOMException = g.DOMException;
+  exports.DOMException = self.DOMException;
   try {
     new exports.DOMException();
   } catch (err) {
@@ -65688,50 +65648,28 @@ var irrelevant = (function (exports) {
 
       xhr.onload = function() {
         var options = {
+          status: xhr.status,
           statusText: xhr.statusText,
           headers: parseHeaders(xhr.getAllResponseHeaders() || '')
         };
-        // This check if specifically for when a user fetches a file locally from the file system
-        // Only if the status is out of a normal range
-        if (request.url.indexOf('file://') === 0 && (xhr.status < 200 || xhr.status > 599)) {
-          options.status = 200;
-        } else {
-          options.status = xhr.status;
-        }
         options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL');
         var body = 'response' in xhr ? xhr.response : xhr.responseText;
-        setTimeout(function() {
-          resolve(new Response(body, options));
-        }, 0);
+        resolve(new Response(body, options));
       };
 
       xhr.onerror = function() {
-        setTimeout(function() {
-          reject(new TypeError('Network request failed'));
-        }, 0);
+        reject(new TypeError('Network request failed'));
       };
 
       xhr.ontimeout = function() {
-        setTimeout(function() {
-          reject(new TypeError('Network request timed out'));
-        }, 0);
+        reject(new TypeError('Network request failed'));
       };
 
       xhr.onabort = function() {
-        setTimeout(function() {
-          reject(new exports.DOMException('Aborted', 'AbortError'));
-        }, 0);
+        reject(new exports.DOMException('Aborted', 'AbortError'));
       };
 
-      function fixUrl(url) {
-        try {
-          return url === '' && g.location.href ? g.location.href : url
-        } catch (e) {
-          return url
-        }
-      }
-
-      xhr.open(request.method, fixUrl(request.url), true);
+      xhr.open(request.method, request.url, true);
 
       if (request.credentials === 'include') {
         xhr.withCredentials = true;
@@ -65739,32 +65677,13 @@ var irrelevant = (function (exports) {
         xhr.withCredentials = false;
       }
 
-      if ('responseType' in xhr) {
-        if (support.blob) {
-          xhr.responseType = 'blob';
-        } else if (
-          support.arrayBuffer
-        ) {
-          xhr.responseType = 'arraybuffer';
-        }
+      if ('responseType' in xhr && support.blob) {
+        xhr.responseType = 'blob';
       }
 
-      if (init && typeof init.headers === 'object' && !(init.headers instanceof Headers || (g.Headers && init.headers instanceof g.Headers))) {
-        var names = [];
-        Object.getOwnPropertyNames(init.headers).forEach(function(name) {
-          names.push(normalizeName(name));
-          xhr.setRequestHeader(name, normalizeValue(init.headers[name]));
-        });
-        request.headers.forEach(function(value, name) {
-          if (names.indexOf(name) === -1) {
-            xhr.setRequestHeader(name, value);
-          }
-        });
-      } else {
-        request.headers.forEach(function(value, name) {
-          xhr.setRequestHeader(name, value);
-        });
-      }
+      request.headers.forEach(function(value, name) {
+        xhr.setRequestHeader(name, value);
+      });
 
       if (request.signal) {
         request.signal.addEventListener('abort', abortXhr);
@@ -65783,11 +65702,11 @@ var irrelevant = (function (exports) {
 
   fetch.polyfill = true;
 
-  if (!g.fetch) {
-    g.fetch = fetch;
-    g.Headers = Headers;
-    g.Request = Request;
-    g.Response = Response;
+  if (!self.fetch) {
+    self.fetch = fetch;
+    self.Headers = Headers;
+    self.Request = Request;
+    self.Response = Response;
   }
 
   exports.Headers = Headers;
@@ -65800,12 +65719,13 @@ var irrelevant = (function (exports) {
   return exports;
 
 })({});
-})(__globalThis__);
-// This is a ponyfill, so...
-__globalThis__.fetch.ponyfill = true;
-delete __globalThis__.fetch.polyfill;
-// Choose between native implementation (__global__) or custom implementation (__globalThis__)
-var ctx = __global__.fetch ? __global__ : __globalThis__;
+})(__self__);
+__self__.fetch.ponyfill = true;
+// Remove "polyfill" property added by whatwg-fetch
+delete __self__.fetch.polyfill;
+// Choose between native implementation (global) or custom implementation (__self__)
+// var ctx = global.fetch ? global : __self__;
+var ctx = __self__; // this line disable service worker support temporarily
 exports = ctx.fetch // To enable: import fetch from 'cross-fetch'
 exports["default"] = ctx.fetch // For TypeScript consumers without esModuleInterop.
 exports.fetch = ctx.fetch // To enable: import {fetch} from 'cross-fetch'
@@ -65817,14 +65737,14 @@ module.exports = exports
 
 /***/ }),
 
-/***/ 223:
+/***/ 276:
 /***/ (() => {
 
 /* (ignored) */
 
 /***/ }),
 
-/***/ 410:
+/***/ 165:
 /***/ (() => {
 
 /* (ignored) */
@@ -65838,14 +65758,14 @@ module.exports = exports
 
 /***/ }),
 
-/***/ 911:
-/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nested_webpack_require_21261__) => {
+/***/ 996:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nested_webpack_require_15835__) => {
 
-__nested_webpack_require_21261__.r(__webpack_exports__);
-/* harmony export */ __nested_webpack_require_21261__.d(__webpack_exports__, {
+__nested_webpack_require_15835__.r(__webpack_exports__);
+/* harmony export */ __nested_webpack_require_15835__.d(__webpack_exports__, {
 /* harmony export */   getFile: () => (/* binding */ getFile)
 /* harmony export */ });
-/* harmony import */ var cross_fetch__WEBPACK_IMPORTED_MODULE_0__ = __nested_webpack_require_21261__(945);
+/* harmony import */ var cross_fetch__WEBPACK_IMPORTED_MODULE_0__ = __nested_webpack_require_15835__(545);
 
 async function getFile(uri) {
     let buffer;
@@ -65876,14 +65796,14 @@ async function getFile(uri) {
 
 /***/ }),
 
-/***/ 64:
-/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nested_webpack_require_22374__) => {
+/***/ 629:
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nested_webpack_require_16949__) => {
 
-__nested_webpack_require_22374__.r(__webpack_exports__);
-/* harmony export */ __nested_webpack_require_22374__.d(__webpack_exports__, {
+__nested_webpack_require_16949__.r(__webpack_exports__);
+/* harmony export */ __nested_webpack_require_16949__.d(__webpack_exports__, {
 /* harmony export */   getLocalFile: () => (/* binding */ getLocalFile)
 /* harmony export */ });
-/* harmony import */ var node_fs_promises__WEBPACK_IMPORTED_MODULE_0__ = __nested_webpack_require_22374__(410);
+/* harmony import */ var node_fs_promises__WEBPACK_IMPORTED_MODULE_0__ = __nested_webpack_require_16949__(165);
 
 // import path from 'path';
 // import {fileURLToPath} from 'url';
@@ -65916,7 +65836,7 @@ async function getLocalFile(path) {
 /******/ var __webpack_module_cache__ = {};
 /******/ 
 /******/ // The require function
-/******/ function __nested_webpack_require_23592__(moduleId) {
+/******/ function __nested_webpack_require_18167__(moduleId) {
 /******/ 	// Check if module is in cache
 /******/ 	var cachedModule = __webpack_module_cache__[moduleId];
 /******/ 	if (cachedModule !== undefined) {
@@ -65930,7 +65850,7 @@ async function getLocalFile(path) {
 /******/ 	};
 /******/ 
 /******/ 	// Execute the module function
-/******/ 	__webpack_modules__[moduleId](module, module.exports, __nested_webpack_require_23592__);
+/******/ 	__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nested_webpack_require_18167__);
 /******/ 
 /******/ 	// Return the exports of the module
 /******/ 	return module.exports;
@@ -65940,36 +65860,24 @@ async function getLocalFile(path) {
 /******/ /* webpack/runtime/define property getters */
 /******/ (() => {
 /******/ 	// define getter functions for harmony exports
-/******/ 	__nested_webpack_require_23592__.d = (exports, definition) => {
+/******/ 	__nested_webpack_require_18167__.d = (exports, definition) => {
 /******/ 		for(var key in definition) {
-/******/ 			if(__nested_webpack_require_23592__.o(definition, key) && !__nested_webpack_require_23592__.o(exports, key)) {
+/******/ 			if(__nested_webpack_require_18167__.o(definition, key) && !__nested_webpack_require_18167__.o(exports, key)) {
 /******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
 /******/ 			}
 /******/ 		}
 /******/ 	};
 /******/ })();
 /******/ 
-/******/ /* webpack/runtime/global */
-/******/ (() => {
-/******/ 	__nested_webpack_require_23592__.g = (function() {
-/******/ 		if (typeof globalThis === 'object') return globalThis;
-/******/ 		try {
-/******/ 			return this || new Function('return this')();
-/******/ 		} catch (e) {
-/******/ 			if (typeof window === 'object') return window;
-/******/ 		}
-/******/ 	})();
-/******/ })();
-/******/ 
 /******/ /* webpack/runtime/hasOwnProperty shorthand */
 /******/ (() => {
-/******/ 	__nested_webpack_require_23592__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	__nested_webpack_require_18167__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
 /******/ })();
 /******/ 
 /******/ /* webpack/runtime/make namespace object */
 /******/ (() => {
 /******/ 	// define __esModule on exports
-/******/ 	__nested_webpack_require_23592__.r = (exports) => {
+/******/ 	__nested_webpack_require_18167__.r = (exports) => {
 /******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
 /******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
 /******/ 		}
@@ -65983,7 +65891,7 @@ var __webpack_exports__ = {};
 (() => {
 
 // EXPORTS
-__nested_webpack_require_23592__.d(__webpack_exports__, {
+__nested_webpack_require_18167__.d(__webpack_exports__, {
   qd: () => (/* reexport */ AbstractProjection),
   lR: () => (/* reexport */ CoordsType),
   v4: () => (/* reexport */ HiPSFITS),
@@ -66005,8 +65913,8 @@ __nested_webpack_require_23592__.d(__webpack_exports__, {
 });
 
 // EXTERNAL MODULE: fs (ignored)
-var fs_ignored_ = __nested_webpack_require_23592__(223);
-;// CONCATENATED MODULE: ./node_modules/jsfitsio/lib-esm/FITSWriter.js
+var fs_ignored_ = __nested_webpack_require_18167__(276);
+;// CONCATENATED MODULE: ../jsfitsio/lib-esm/FITSWriter.js
 // import { FITSHeader } from "./model/FITSHeader.js"
 
 class FITSWriter {
@@ -66177,17 +66085,14 @@ class FITSWriter {
         }
         return dataBytes;
     }
-    static typedArrayToURL(fitsParsed) {
-        const fitsFile = this.createFITS(fitsParsed);
-        const blob = new Blob([fitsFile], { type: "application/fits" });
-        // console.log(`<html><body><img src='${URL.createObjectURL(b)}'</body></html>`);
-        const url = URL.createObjectURL(blob);
-        console.log(`Generated FITS file URL: ${url}`);
-        const revokeTimeout_sec = 10;
-        setTimeout(() => url, revokeTimeout_sec * 1000);
-        console.log(`Generated FITS will be available for ${revokeTimeout_sec} seconds: ${url}`);
-        return url;
-    }
+    // static typedArrayToURL(fitsParsed: FITSParsed): string {
+    //   const fitsFile = this.createFITS(fitsParsed);
+    //   const blob = new Blob([fitsFile], { type: "application/fits" });
+    //   // console.log(`<html><body><img src='${URL.createObjectURL(b)}'</body></html>`);
+    //   const url = URL.createObjectURL(blob);
+    //   console.log(`Generated FITS file URL: ${url}`);
+    //   return url;
+    // }
     static writeFITSFile(fitsParsed, filePath) {
         const fitsFile = this.createFITS(fitsParsed);
         try {
@@ -66208,7 +66113,7 @@ class FITSWriter {
 // // Write the FITS file to the filesystem
 // FITSWriter.writeFITSFile(fitsParsed, filePath);
 //# sourceMappingURL=FITSWriter.js.map
-;// CONCATENATED MODULE: ./node_modules/jsfitsio/lib-esm/model/FITSHeaderItem.js
+;// CONCATENATED MODULE: ../jsfitsio/lib-esm/model/FITSHeaderItem.js
 /**
  * Summary. (bla bla bla)
  *
@@ -66237,7 +66142,7 @@ class FITSHeaderItem {
     }
 }
 //# sourceMappingURL=FITSHeaderItem.js.map
-;// CONCATENATED MODULE: ./node_modules/jsfitsio/lib-esm/model/FITSHeaderManager.js
+;// CONCATENATED MODULE: ../jsfitsio/lib-esm/model/FITSHeaderManager.js
 
 class FITSHeaderManager {
     static SIMPLE = "SIMPLE";
@@ -66312,7 +66217,7 @@ class FITSHeaderManager {
     }
 }
 //# sourceMappingURL=FITSHeaderManager.js.map
-;// CONCATENATED MODULE: ./node_modules/jsfitsio/lib-esm/ParseHeader.js
+;// CONCATENATED MODULE: ../jsfitsio/lib-esm/ParseHeader.js
 // import { FITSHeader } from "./model/FITSHeader.js";
 
 
@@ -66365,7 +66270,7 @@ class ParseHeader {
     }
 }
 //# sourceMappingURL=ParseHeader.js.map
-;// CONCATENATED MODULE: ./node_modules/jsfitsio/lib-esm/ParseUtils.js
+;// CONCATENATED MODULE: ../jsfitsio/lib-esm/ParseUtils.js
 /**
  * Summary. (bla bla bla)
  *
@@ -66505,7 +66410,7 @@ class ParseUtils {
 }
 // export default ParseUtils;
 //# sourceMappingURL=ParseUtils.js.map
-;// CONCATENATED MODULE: ./node_modules/jsfitsio/lib-esm/ParsePayload.js
+;// CONCATENATED MODULE: ../jsfitsio/lib-esm/ParsePayload.js
 // "use strict";
 /**
  * Summary. (bla bla bla)
@@ -66639,7 +66544,7 @@ class ParsePayload {
     }
 }
 //# sourceMappingURL=ParsePayload.js.map
-;// CONCATENATED MODULE: ./node_modules/jsfitsio/lib-esm/FITSParser.js
+;// CONCATENATED MODULE: ../jsfitsio/lib-esm/FITSParser.js
 
 
 
@@ -66691,15 +66596,15 @@ class FITSParser {
         }
         return matrix;
     }
-    static generateFITSForWeb(fitsParsed) {
-        return FITSWriter.typedArrayToURL(fitsParsed);
-    }
+    // static generateFITSForWeb(fitsParsed: FITSParsed) {
+    //   return FITSWriter.typedArrayToURL(fitsParsed)
+    // }
     static saveFITSLocally(fitsParsed, path) {
         return FITSWriter.writeFITSFile(fitsParsed, path);
     }
     static async getFile(uri) {
         if (!uri.substring(0, 5).toLowerCase().includes("http")) {
-            const p = await Promise.resolve(/* import() */).then(__nested_webpack_require_23592__.bind(__nested_webpack_require_23592__, 64));
+            const p = await Promise.resolve(/* import() */).then(__nested_webpack_require_18167__.bind(__nested_webpack_require_18167__, 629));
             const rawData = await p.getLocalFile(uri);
             if (rawData?.length) {
                 const uint8 = new Uint8Array(rawData);
@@ -66708,7 +66613,7 @@ class FITSParser {
             return new Uint8Array(0);
         }
         else {
-            const p = await Promise.resolve(/* import() */).then(__nested_webpack_require_23592__.bind(__nested_webpack_require_23592__, 911));
+            const p = await Promise.resolve(/* import() */).then(__nested_webpack_require_18167__.bind(__nested_webpack_require_18167__, 996));
             const rawData = await p.getFile(uri);
             if (rawData?.byteLength) {
                 const uint8 = new Uint8Array(rawData);
@@ -67485,13 +67390,13 @@ class MercatorProjection extends AbstractProjection {
         return tilesRaDecList;
     }
     /** TODO !!! check and handle RA passing through 360-0 */
-    pix2world(i, j) {
+    pix2world(i, j, pxsize, minra, mindec) {
         let ra;
         let dec;
         // ra = i * this._stepra + this._minra;
         // dec = j * this._stepdec + this._mindec;
-        ra = i * this.pxsize + this.minra;
-        dec = j * this.pxsize + this.mindec;
+        ra = i * pxsize + minra;
+        dec = j * pxsize + mindec;
         let p = new Point(CoordsType.ASTRO, NumberType.DEGREES, ra, dec);
         return p;
         // return [ra, dec];
@@ -69618,7 +69523,7 @@ class FITSList {
 }
 
 // EXTERNAL MODULE: node:fs/promises (ignored)
-var promises_ignored_ = __nested_webpack_require_23592__(942);
+var promises_ignored_ = __nested_webpack_require_18167__(942);
 ;// CONCATENATED MODULE: ./src/projections/hips/HiPSPropManager.ts
 
 
@@ -69921,6 +69826,14 @@ class HiPSProjection {
                     const bytesXelem = Math.abs(bitpix / 8);
                     raDecList.getImagePixelsByTile(hipstileno).forEach((imgpx) => {
                         const valueBytes = new Uint8Array(bytesXelem);
+                        if (fitsParsed.data[imgpx.getj()] == undefined) {
+                            console.warn(`j index ${imgpx.getj()} is outside the image range 0-${naxis2 - 1} for fits file ${fitsurl}`);
+                            return;
+                        }
+                        if ((imgpx.geti() * bytesXelem + bytesXelem) > fitsParsed.data[imgpx.getj()].length) {
+                            console.warn(`i index ${imgpx.geti()} is outside the image range 0-${(fitsParsed.data[imgpx.getj()].length / bytesXelem) - 1} for fits file ${fitsurl}`);
+                            return;
+                        }
                         for (let b = 0; b < bytesXelem; b++) {
                             valueBytes[b] = fitsParsed.data[imgpx.getj()][imgpx.geti() * bytesXelem + b];
                         }
@@ -69948,15 +69861,15 @@ class HiPSProjection {
 class CutoutResult {
     fits;
     fitsused;
-    constructor(fits, fitsused) {
+    projection;
+    raDecMinMaxCentral;
+    pxsize;
+    constructor(fits, fitsused, projection, raDecMinMaxCentral, pxsize) {
         this.fits = fits;
         this.fitsused = fitsused;
-    }
-    get fit() {
-        return this.fits;
-    }
-    get fitsUsed() {
-        return this.fitsUsed;
+        this.projection = projection;
+        this.raDecMinMaxCentral = raDecMinMaxCentral;
+        this.pxsize = pxsize;
     }
 }
 
@@ -70053,6 +69966,8 @@ class WCSLight {
         if (!outRADecList)
             return null;
         const raDecMinMaxCentral = outRADecList.computeRADecMinMaxCentral();
+        if (raDecMinMaxCentral == null)
+            return null;
         const cRA = raDecMinMaxCentral?.getCentralRA();
         const cDec = raDecMinMaxCentral?.getCentralDec();
         if (cRA === undefined || cDec === undefined)
@@ -70110,7 +70025,7 @@ class WCSLight {
             const fitsurl = baseHiPSURL + "/Norder" + hipsOrder + "/Dir" + dir + "/Npix" + hipstileno + ".fits";
             hipsUsed.push(fitsurl);
         });
-        const result = new CutoutResult(fits, hipsUsed);
+        const result = new CutoutResult(fits, hipsUsed, outproj, raDecMinMaxCentral, pixelAngSize);
         return result;
     }
     static hipsFITSChangeProjection() {
@@ -70122,15 +70037,15 @@ class WCSLight {
      * @param {*} fitsdata
      * @returns {URL}
      */
-    static generateFITS(fitsheader, fitsdata) {
-        const fitsParsed = {
-            header: fitsheader,
-            data: fitsdata
-        };
-        // const blobUrl = FITSParser.generateFITSForWeb(fitsheader, fitsdata);
-        const blobUrl = FITSParser.generateFITSForWeb(fitsParsed);
-        return blobUrl;
-    }
+    // static generateFITS(fitsheader: any, fitsdata: any): string {
+    //     const fitsParsed = {
+    //         header: fitsheader,
+    //         data: fitsdata
+    //     }
+    //     // const blobUrl = FITSParser.generateFITSForWeb(fitsheader, fitsdata);
+    //     const blobUrl = FITSParser.generateFITSForWeb(fitsParsed);
+    //     return blobUrl;
+    // }
     static getAvaillableProjections() {
         return ["Mercator", "HiPS", "HEALPix"];
     }
