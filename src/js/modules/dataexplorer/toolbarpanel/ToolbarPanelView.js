@@ -40,12 +40,15 @@ class ToolbarPanelView {
             closeFITSHeaderButton: () => {
                 return $("#de_fits_header_popup_close")
             },
-            fillFitsHeaderPopup: (header) => {
+            fillFitsHeaderPopup: (headerItemList) => {
                 let str = "";
 
                 str += " <div id='de_fits_header_popup_top'><button class='button' id='de_fits_header_popup_close'>x</button></div>";
-                header.forEach((value, key) => {
-                    str += key + ": " + value + "<br>";
+                // header.forEach((value, key) => {
+                //     str += key + ": " + value + "<br>";
+                // });
+                headerItemList.forEach((item) => {
+                    str += item.key + ": " + item.value + "<br>";
                 });
                 // $("#de_fits_header_popup").text(str);
                 $("#de_fits_header_popup").html(str);
@@ -126,7 +129,8 @@ class ToolbarPanelView {
         this._headerPanelVisible = false;
         this._html = $(
             "<button class='button' id='de_show_fits_header'>FITS header</button> &nbsp; "
-            + " <a href='' id='test' download='fabviewer.fits'><button class='button' id='de_save_fits'>export FITS</button></a> &nbsp; "
+            // + " <a href='' id='test' download='fabviewer.fits'><button class='button' id='de_save_fits'>export FITS</button></a> &nbsp; "
+            + " <a href='' id='test'><button class='button' id='de_save_fits'>export FITS</button></a> &nbsp; "
             + " <button class='button' id='de_save_png'>export PNG</button>"
             + "<button class='button' id='de_view_close'>x</button></div>"
             + " <div id='de_fits_header_popup'>"

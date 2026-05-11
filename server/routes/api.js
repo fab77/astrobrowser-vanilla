@@ -8,7 +8,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// import { WCSLight, HiPSProjection, MercatorProjection, Point, CoordsType, NumberType } from 'wcslight';
+
+
 import { WCSLight, HiPSProjection, MercatorProjection, Point, CoordsType, NumberType } from 'wcslight';
+
 import { FITSWriter } from 'jsfitsio';
 
 let router = express.Router();
@@ -21,26 +25,20 @@ router.get('/cutout', function(req, res, next) {
   runWCS(req).then( async resultdata => {
     
     
-    if (resultdata == undefined) {
+    if (resultdata == null) {
       console.log("Response from WCSLight was undefined")
       res.end();
-      return
+      return null
     }
 
     console.log("Processing response from WCSLight")
     let fw = new FITSWriter();
     fw.run(resultdata.fitsheader[0], resultdata.fitsdata.get(0));
 
-    // console.log("fw._fitsData")
-    // console.log(fw._fitsData)
-    
     const blob = new Blob([fw._fitsData], { type: "application/fits" });
     
     blob.lastModifiedDate = new Date();
     blob.name = "test.fits";
-    
-    // console.log(blob)
-    // console.log("result size %", blob.size)
   
     console.log("Preparing response")
     res.setHeader('Content-Length', blob.size);
@@ -55,10 +53,6 @@ router.get('/cutout', function(req, res, next) {
     res.end();
   });
   
-  
-
-  // res.download(result);
-
 });
 
 
@@ -99,14 +93,12 @@ async function runWCS(request) {
   console.log("ra %s, dec %s, px_size %s, radius %s",radeg, decdeg, pxsize_deg, radius_deg)
   let result = await WCSLight.cutout(center, radius_deg, pxsize_deg, inproj, outproj);
   // console.log(result);
-
-  if (result.fitsused.length > 0){
-    // console.log(result);
-    return result;
-    
-  } else {
-    console.error("no data found");
+  if (result == undefined || result == null || result.fitsused.length == 0) {
+    console.log("WCSLight returned undefined")
+    return null
   }
+
+  return result;
   
 
   // inproj.parsePropertiesFile(hipsBaseUri).then(async propFile => {
