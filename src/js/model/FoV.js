@@ -69,7 +69,7 @@ class FoV{
 			vec3.subtract(intersectionPoint_center_vector, intersectionPoint, center);
 			
 			
-			// error found!!!!! when the camera is rotated, the following vector should be rotated as well
+			// 20250507: SOLVED? error found!!!!! when the camera is rotated, the following vector should be rotated as well
 			// because the z-axis of the world doesn't coincide with the z-axis of the camera anymore 
 			var b = vec3.clone( [this.model.center[0], this.model.center[1], this.model.center[2] + this.model.radius] );
 			
@@ -80,6 +80,8 @@ class FoV{
 			// mat4.multiplyVec3(vMatrixInverse, b, b);
 			
 			//gl-matrix 3.x
+			// we apply here any possible rotation since in the view matrix since the 
+			// z axis could not match with the z axis in the world space.
 			this.mat4multiplyVec3(vMatrixInverse, b, b);
 			
 			

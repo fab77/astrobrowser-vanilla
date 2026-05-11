@@ -18,7 +18,7 @@ let router = express.Router();
 router.get('/cutout', function(req, res, next) {
   
   // res.sendFile(path.join(__dirname, '../../public','/api.html'));
-  runWCS(req).then( resultdata => {
+  runWCS(req).then( async resultdata => {
     
     
     if (resultdata == undefined) {
@@ -44,7 +44,13 @@ router.get('/cutout', function(req, res, next) {
   
     console.log("Preparing response")
     res.setHeader('Content-Length', blob.size);
-    res.write(blob._buffer, 'binary');
+
+    const arrayBuffer = await blob.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    res.write(buffer, 'binary');
+
+    // res.write(blob._buffer, 'binary');
     console.log("Response from API sent")
     res.end();
   });

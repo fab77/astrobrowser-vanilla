@@ -15,13 +15,9 @@ return /******/ (() => { // webpackBootstrap
 /*!****************************************!*\
   !*** ./node_modules/canvas/browser.js ***!
   \****************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ ((__unused_webpack_module, exports) => {
 
 /* globals document, ImageData */
-
-const parseFont = __webpack_require__(/*! ./lib/parse-font */ "./node_modules/canvas/lib/parse-font.js")
-
-exports.parseFont = parseFont
 
 exports.createCanvas = function (width, height) {
   return Object.assign(document.createElement('canvas'), { width: width, height: height })
@@ -51,118 +47,6 @@ exports.loadImage = function (src, options) {
 
     image.src = src
   })
-}
-
-
-/***/ }),
-
-/***/ "./node_modules/canvas/lib/parse-font.js":
-/*!***********************************************!*\
-  !*** ./node_modules/canvas/lib/parse-font.js ***!
-  \***********************************************/
-/***/ ((module) => {
-
-"use strict";
-
-
-/**
- * Font RegExp helpers.
- */
-
-const weights = 'bold|bolder|lighter|[1-9]00'
-const styles = 'italic|oblique'
-const variants = 'small-caps'
-const stretches = 'ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded'
-const units = 'px|pt|pc|in|cm|mm|%|em|ex|ch|rem|q'
-const string = '\'([^\']+)\'|"([^"]+)"|[\\w\\s-]+'
-
-// [ [ <‘font-style’> || <font-variant-css21> || <‘font-weight’> || <‘font-stretch’> ]?
-//    <‘font-size’> [ / <‘line-height’> ]? <‘font-family’> ]
-// https://drafts.csswg.org/css-fonts-3/#font-prop
-const weightRe = new RegExp(`(${weights}) +`, 'i')
-const styleRe = new RegExp(`(${styles}) +`, 'i')
-const variantRe = new RegExp(`(${variants}) +`, 'i')
-const stretchRe = new RegExp(`(${stretches}) +`, 'i')
-const sizeFamilyRe = new RegExp(
-  `([\\d\\.]+)(${units}) *((?:${string})( *, *(?:${string}))*)`)
-
-/**
- * Cache font parsing.
- */
-
-const cache = {}
-
-const defaultHeight = 16 // pt, common browser default
-
-/**
- * Parse font `str`.
- *
- * @param {String} str
- * @return {Object} Parsed font. `size` is in device units. `unit` is the unit
- *   appearing in the input string.
- * @api private
- */
-
-module.exports = str => {
-  // Cached
-  if (cache[str]) return cache[str]
-
-  // Try for required properties first.
-  const sizeFamily = sizeFamilyRe.exec(str)
-  if (!sizeFamily) return // invalid
-
-  // Default values and required properties
-  const font = {
-    weight: 'normal',
-    style: 'normal',
-    stretch: 'normal',
-    variant: 'normal',
-    size: parseFloat(sizeFamily[1]),
-    unit: sizeFamily[2],
-    family: sizeFamily[3].replace(/["']/g, '').replace(/ *, */g, ',')
-  }
-
-  // Optional, unordered properties.
-  let weight, style, variant, stretch
-  // Stop search at `sizeFamily.index`
-  const substr = str.substring(0, sizeFamily.index)
-  if ((weight = weightRe.exec(substr))) font.weight = weight[1]
-  if ((style = styleRe.exec(substr))) font.style = style[1]
-  if ((variant = variantRe.exec(substr))) font.variant = variant[1]
-  if ((stretch = stretchRe.exec(substr))) font.stretch = stretch[1]
-
-  // Convert to device units. (`font.unit` is the original unit)
-  // TODO: ch, ex
-  switch (font.unit) {
-    case 'pt':
-      font.size /= 0.75
-      break
-    case 'pc':
-      font.size *= 16
-      break
-    case 'in':
-      font.size *= 96
-      break
-    case 'cm':
-      font.size *= 96.0 / 2.54
-      break
-    case 'mm':
-      font.size *= 96.0 / 25.4
-      break
-    case '%':
-      // TODO disabled because existing unit tests assume 100
-      // font.size *= defaultHeight / 100 / 0.75
-      break
-    case 'em':
-    case 'rem':
-      font.size *= defaultHeight / 0.75
-      break
-    case 'q':
-      font.size *= 96 / 25.4 / 4
-      break
-  }
-
-  return (cache[str] = font)
 }
 
 
@@ -52488,7 +52372,7 @@ class FoV{
 			gl_matrix__WEBPACK_IMPORTED_MODULE_3__.subtract(intersectionPoint_center_vector, intersectionPoint, center);
 			
 			
-			// error found!!!!! when the camera is rotated, the following vector should be rotated as well
+			// 20250507: SOLVED? error found!!!!! when the camera is rotated, the following vector should be rotated as well
 			// because the z-axis of the world doesn't coincide with the z-axis of the camera anymore 
 			var b = gl_matrix__WEBPACK_IMPORTED_MODULE_3__.clone( [this.model.center[0], this.model.center[1], this.model.center[2] + this.model.radius] );
 			
@@ -52499,6 +52383,8 @@ class FoV{
 			// mat4.multiplyVec3(vMatrixInverse, b, b);
 			
 			//gl-matrix 3.x
+			// we apply here any possible rotation since in the view matrix since the 
+			// z axis could not match with the z axis in the world space.
 			this.mat4multiplyVec3(vMatrixInverse, b, b);
 			
 			
@@ -53132,7 +53018,7 @@ __webpack_require__.r(__webpack_exports__);
                     
                     // position the div
                     let decDeg = point._decDeg;
-                    if (Math.abs(decDeg - center._decDeg) < 45 ) {
+                    if (Math.abs(decDeg - center._decDeg) < 60 ) {
                         // https://webglfundamentals.org/webgl/lessons/webgl-text-html.html
                         let clipspace = gl_matrix__WEBPACK_IMPORTED_MODULE_10__.create();
                         gl_matrix__WEBPACK_IMPORTED_MODULE_10__.transformMat4(clipspace, phiPoint, mvpMatrix);
@@ -65543,7 +65429,7 @@ class ShaderManager {
 				#endif
 
 				mycolor = color0;
-				finalColor = vec3(finalColor.x +  mycolor.x *uFactor0 ,finalColor.y +  mycolor.y*uFactor0,finalColor.z +  mycolor.z*uFactor0); 
+				finalColor = vec3(mycolor.x *uFactor0, mycolor.y*uFactor0, mycolor.z*uFactor0); 
 			} else if (uFactor7 >= 0.0){
 				finalColor = vec3(1.0, 0.0, 0.0);
 			}
@@ -65884,7 +65770,7 @@ class FoVUtils {
 			let cornersPoints = FoVUtils.getScreenCornersIntersection(in_pMatrix, in_cameraObj, in_gl_canvas, in_modelObj);
 			
 			points = cornersPoints;
-			
+			console.warn("CASE C")
 			
 		}else{
 			// Starting SECOND type of check
@@ -65945,7 +65831,7 @@ class FoVUtils {
 			// TODO N.B. this is the less precise algo. To make more precise, instead of computing the middle point between 2 points, 
 			// it would be better to divide such segment into 3 or 4 and compute more intersection points with the sphere.
 			if (intersectionTopMiddle.intersectionPoint.length == 0 && intersectionRightMiddle.intersectionPoint.length == 0){
-				
+				console.warn("CASE A")
 				topPoints = FoVUtils.getNearestSpherePoint(topPlaneNormal);
 				bottomPoints = FoVUtils.getNearestSpherePoint(bottomPlaneNormal);
 				leftPoints = FoVUtils.getNearestSpherePoint(leftPlaneNormal);
@@ -65960,6 +65846,7 @@ class FoVUtils {
 				
 			} else if(intersectionTopMiddle.intersectionPoint.length == 0){
 				// No intersection between top/bottom frustum planes and the sphere (CASE E)
+				console.warn("CASE E")
 				topPoints = FoVUtils.getNearestSpherePoint(topPlaneNormal);
 				bottomPoints = FoVUtils.getNearestSpherePoint(bottomPlaneNormal);
 				leftPoints = FoVUtils.getFrustumIntersectionWithSphere(M, leftPlaneNormal, bottomPlaneNormal, topPlaneNormal);
@@ -65973,6 +65860,7 @@ class FoVUtils {
 				points.push(topPoints[0], middleTopRight[0], rightPoints[0], rightPoints[1], middleRightBottom[0], bottomPoints[0], middleBottomLeft[0], leftPoints[0], leftPoints[1], middleLeftTop[0]);
 			
 			} else if(intersectionRightMiddle.intersectionPoint.length == 0){
+				console.warn("CASE D")
 				// No intersection between right/left frustum planes and the sphere (CASE D)
 				topPoints = FoVUtils.getFrustumIntersectionWithSphere(M, topPlaneNormal, leftPlaneNormal, rightPlaneNormal);
 				bottomPoints = FoVUtils.getFrustumIntersectionWithSphere(M, bottomPlaneNormal, rightPlaneNormal, leftPlaneNormal);
@@ -65987,6 +65875,7 @@ class FoVUtils {
 				points.push(topPoints[0], topPoints[1], middleTopRight[0], rightPoints[0], middleRightBottom[0], bottomPoints[0], bottomPoints[1], middleBottomLeft[0], leftPoints[0], middleLeftTop[0]);
 				
 			} else {
+				console.warn("CASE B")
 				// all frustum planes intersect with the sphere, but the the screen is not fully covered. (CASE B)
 				topPoints = FoVUtils.getFrustumIntersectionWithSphere(M, topPlaneNormal, leftPlaneNormal, rightPlaneNormal);
 				bottomPoints = FoVUtils.getFrustumIntersectionWithSphere(M, bottomPlaneNormal, rightPlaneNormal, leftPlaneNormal);

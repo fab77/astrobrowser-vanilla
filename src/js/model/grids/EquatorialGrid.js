@@ -277,7 +277,7 @@ import { gridTextHelper } from './GridTextHelper.js';
                     
                     // position the div
                     let decDeg = point._decDeg;
-                    if (Math.abs(decDeg - center._decDeg) < 45 ) {
+                    if (Math.abs(decDeg - center._decDeg) < 60 ) {
                         // https://webglfundamentals.org/webgl/lessons/webgl-text-html.html
                         let clipspace = vec4.create();
                         vec4.transformMat4(clipspace, phiPoint, mvpMatrix);

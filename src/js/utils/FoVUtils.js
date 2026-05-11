@@ -138,7 +138,7 @@ class FoVUtils {
 			let cornersPoints = FoVUtils.getScreenCornersIntersection(in_pMatrix, in_cameraObj, in_gl_canvas, in_modelObj);
 			
 			points = cornersPoints;
-			
+			console.warn("CASE C")
 			
 		}else{
 			// Starting SECOND type of check
@@ -199,7 +199,7 @@ class FoVUtils {
 			// TODO N.B. this is the less precise algo. To make more precise, instead of computing the middle point between 2 points, 
 			// it would be better to divide such segment into 3 or 4 and compute more intersection points with the sphere.
 			if (intersectionTopMiddle.intersectionPoint.length == 0 && intersectionRightMiddle.intersectionPoint.length == 0){
-				
+				console.warn("CASE A")
 				topPoints = FoVUtils.getNearestSpherePoint(topPlaneNormal);
 				bottomPoints = FoVUtils.getNearestSpherePoint(bottomPlaneNormal);
 				leftPoints = FoVUtils.getNearestSpherePoint(leftPlaneNormal);
@@ -214,6 +214,7 @@ class FoVUtils {
 				
 			} else if(intersectionTopMiddle.intersectionPoint.length == 0){
 				// No intersection between top/bottom frustum planes and the sphere (CASE E)
+				console.warn("CASE E")
 				topPoints = FoVUtils.getNearestSpherePoint(topPlaneNormal);
 				bottomPoints = FoVUtils.getNearestSpherePoint(bottomPlaneNormal);
 				leftPoints = FoVUtils.getFrustumIntersectionWithSphere(M, leftPlaneNormal, bottomPlaneNormal, topPlaneNormal);
@@ -227,6 +228,7 @@ class FoVUtils {
 				points.push(topPoints[0], middleTopRight[0], rightPoints[0], rightPoints[1], middleRightBottom[0], bottomPoints[0], middleBottomLeft[0], leftPoints[0], leftPoints[1], middleLeftTop[0]);
 			
 			} else if(intersectionRightMiddle.intersectionPoint.length == 0){
+				console.warn("CASE D")
 				// No intersection between right/left frustum planes and the sphere (CASE D)
 				topPoints = FoVUtils.getFrustumIntersectionWithSphere(M, topPlaneNormal, leftPlaneNormal, rightPlaneNormal);
 				bottomPoints = FoVUtils.getFrustumIntersectionWithSphere(M, bottomPlaneNormal, rightPlaneNormal, leftPlaneNormal);
@@ -241,6 +243,7 @@ class FoVUtils {
 				points.push(topPoints[0], topPoints[1], middleTopRight[0], rightPoints[0], middleRightBottom[0], bottomPoints[0], bottomPoints[1], middleBottomLeft[0], leftPoints[0], middleLeftTop[0]);
 				
 			} else {
+				console.warn("CASE B")
 				// all frustum planes intersect with the sphere, but the the screen is not fully covered. (CASE B)
 				topPoints = FoVUtils.getFrustumIntersectionWithSphere(M, topPlaneNormal, leftPlaneNormal, rightPlaneNormal);
 				bottomPoints = FoVUtils.getFrustumIntersectionWithSphere(M, bottomPlaneNormal, rightPlaneNormal, leftPlaneNormal);
