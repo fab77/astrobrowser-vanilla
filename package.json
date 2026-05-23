@@ -16,7 +16,7 @@
     "TAP"
   ],
   "author": "Fabrizio Giordano (fab77)",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "homepage": "https://github.com/fab77/",
   "repository": {
     "type": "git",
